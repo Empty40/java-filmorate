@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class FilmController {
         film.setId(j);
         if (validationFilmName(film.getName()) && validationLengthDescriptions(film.getDescription()) &&
                 validationDateRelease(date) && (film.getDuration() > 0)) {
-            log.info("В список добавлен фильм: {}", film.toString());
+            log.info("В список добавлен фильм: {}", film);
             films.add(film);
             j++;
             return film;

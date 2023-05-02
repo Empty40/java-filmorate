@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,7 @@ public class UserController {
             if (user.getName() == null) {
                 user.setName(user.getLogin());
             }
-            log.info("Был создан пользователь: {}", user.toString());
+            log.info("Был создан пользователь: {}", user);
             users.add(user);
             j++;
             return user;
@@ -47,7 +48,7 @@ public class UserController {
     public User updateUser(@RequestBody User user) throws ValidationException {
         for (int i = 0; i < users.size(); i++) {
             if (user.getId() == users.get(i).getId()) {
-                log.debug("Данные пользователя были обновлены - : {}", user.toString());
+                log.debug("Данные пользователя были обновлены - : {}", user);
                 users.set(i, user);
                 break;
             } else {
