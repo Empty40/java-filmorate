@@ -51,7 +51,7 @@ public class UserController {
                 users.set(i, user);
                 break;
             } else {
-                throw new ValidationException("Ошибка в валидации данных, проверьте корректность данных");
+                throw new ValidationException("Ошибка в валидации данных, проверьте корректность введенных данных");
             }
         }
         return user;
