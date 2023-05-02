@@ -19,7 +19,7 @@ public class FilmController {
 
     private int j = 1;
 
-    private final LocalDate controlDate = LocalDate.of(1895, 12, 28);
+    private final LocalDate controlDate = LocalDate.of(1985, 12, 28);
 
     private List<Film> films = new ArrayList<>();
 
@@ -52,8 +52,7 @@ public class FilmController {
             }
             if (film.getId() == films.get(i).getId()) {
                 log.debug("Произошло обновление фильма - : {}", films.get(i));
-                films.set(i, film);
-                break;
+                films.add(films.get(i).getId(), film);
             }
         }
         return film;
