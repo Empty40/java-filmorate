@@ -52,7 +52,7 @@ public class FilmController {
             }
             if (film.getId() == films.get(i).getId()) {
                 log.debug("Произошло обновление фильма - : {}", films.get(i));
-                films.add(i, film);
+                films.set(i, film);
                 break;
             }
         }
