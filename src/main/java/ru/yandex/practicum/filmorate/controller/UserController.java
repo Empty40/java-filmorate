@@ -58,7 +58,7 @@ public class UserController {
     }
 
     public boolean validationUserEmail(String email) {
-        if(email.contains("@")) {
+        if (email.contains("@")) {
             return true;
         }
         log.debug("Был введен некорректный E-mail - : {}", email);
@@ -66,7 +66,7 @@ public class UserController {
     }
 
     public boolean validationUserLogin(String login) {
-        if(login != null && !login.contains(" ")) {
+        if (login != null && !login.contains(" ")) {
             return true;
         }
         log.debug("Был введен некорректный логин: {}", login);
@@ -74,7 +74,7 @@ public class UserController {
     }
 
     public boolean validationUserBirth(LocalDate date) {
-        if(!date.isAfter(controlDate)) {
+        if (!date.isAfter(controlDate)) {
             return true;
         }
         log.info("Введенная дата позже чем текущая: {}", date);
