@@ -59,7 +59,7 @@ public class FilmController {
     }
 
     public boolean validationFilmName(String filmName) {
-        if(filmName != null && !filmName.isEmpty()) {
+        if (filmName != null && !filmName.isEmpty()) {
             return true;
         }
         log.debug("Введено пустое название фильма: {}", filmName);
@@ -68,7 +68,7 @@ public class FilmController {
 
     public boolean validationLengthDescriptions(String descriptions) {
         int count = 0;
-        for(int i = 0; i < descriptions.length(); i++) {
+        for (int i = 0; i < descriptions.length(); i++) {
             count++;
         }
         if (count <= 200) {
