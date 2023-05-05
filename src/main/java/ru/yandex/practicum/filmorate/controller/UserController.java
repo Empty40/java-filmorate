@@ -5,39 +5,36 @@ import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/users")
 @Slf4j
 public class UserController {
 
-    private List<User> users = new ArrayList<>();
+    private HashMap<Integer, User> users = new HashMap<>();
 
-    private final LocalDate controlDate = LocalDate.of(2023, 5, 2);
+    private final LocalDateTime controlDate = LocalDateTime.now();
 
-    private int j = 1;
+    private int idCount = 1;
 
     @GetMapping
-    public List<User> allUsers() {
+    public Integer allUsers() {
         log.debug("Текущее количество пользователей: {}", users.size());
-        return users;
+        return users.size();
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) throws ValidationException {
-        LocalDate date = LocalDate.parse(user.getBirthday());
-        user.setId(j);
-        if (validationUserEmail(user.getEmail()) && validationUserLogin(user.getLogin()) &&
-                validationUserBirth(date)) {
+        user.setId(idCount);
+        if (validationUser(user)) {
             if (user.getName() == null) {
                 user.setName(user.getLogin());
             }
             log.info("Был создан пользователь: {}", user);
-            users.add(user);
-            j++;
+            users.put(idCount, user);
+            idCount++;
             return user;
         } else {
             throw new ValidationException("Ошибка в валидации данных, проверьте корректность данных");
@@ -49,7 +46,7 @@ public class UserController {
         for (int i = 0; i < users.size(); i++) {
             if (user.getId() == users.get(i).getId()) {
                 log.debug("Данные пользователя были обновлены - : {}", user);
-                users.set(i, user);
+                users.put(i, user);
                 break;
             } else {
                 throw new ValidationException("Ошибка в валидации данных, проверьте корректность данных");
@@ -58,27 +55,21 @@ public class UserController {
         return user;
     }
 
-    public boolean validationUserEmail(String email) {
-        if (email.contains("@")) {
-            return true;
+    public boolean validationUser(User user) {
+        if (user.getEmail() != null && user.getEmail().contains("@")) {
+        } else {
+            throw new ValidationException("Был введен некорректный E-mail");
         }
-        log.debug("Был введен некорректный E-mail - : {}", email);
-        return false;
-    }
 
-    public boolean validationUserLogin(String login) {
-        if (login != null && !login.contains(" ")) {
-            return true;
+        if (user.getLogin() != null && !user.getLogin().isBlank()) {
+        } else {
+            throw new ValidationException("Был введен некорректный логин");
         }
-        log.debug("Был введен некорректный логин: {}", login);
-        return false;
-    }
 
-    public boolean validationUserBirth(LocalDate date) {
-        if (!date.isAfter(controlDate)) {
-            return true;
+        if (user.getBirthday() != null && !user.getBirthday().isAfter(controlDate)) {
+        } else {
+            throw new ValidationException("Введенная дата позже чем текущая");
         }
-        log.info("Введенная дата позже чем текущая: {}", date);
-        return false;
+        return true;
     }
 }
