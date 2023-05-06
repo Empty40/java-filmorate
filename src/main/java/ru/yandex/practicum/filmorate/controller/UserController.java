@@ -1,11 +1,13 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 @RestController
@@ -20,56 +22,47 @@ public class UserController {
     private int idCount = 1;
 
     @GetMapping
-    public Integer allUsers() {
+    public ArrayList<User> allUsers() {
         log.debug("Текущее количество пользователей: {}", users.size());
-        return users.size();
+        return new ArrayList<>(users.values());
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) throws ValidationException {
-        user.setId(idCount);
-        if (validationUser(user)) {
-            if (user.getName() == null) {
-                user.setName(user.getLogin());
-            }
+        validationUser(user);
+            user.setId(idCount);
             log.info("Был создан пользователь: {}", user);
             users.put(idCount, user);
             idCount++;
             return user;
-        } else {
-            throw new ValidationException("Ошибка в валидации данных, проверьте корректность данных");
-        }
     }
 
     @PutMapping
     public User updateUser(@RequestBody User user) throws ValidationException {
-        for (int i = 0; i < users.size(); i++) {
-            if (user.getId() == users.get(i).getId()) {
-                log.debug("Данные пользователя были обновлены - : {}", user);
-                users.put(i, user);
-                break;
-            } else {
-                throw new ValidationException("Ошибка в валидации данных, проверьте корректность данных");
-            }
+        int userId = user.getId();
+        if (users.containsKey(userId)) {
+            log.debug("Данные пользователя были обновлены - : {}", user);
+            users.put(userId, user);
+        } else {
+            throw new NotFoundException("Пользователь с введенным идентификатором не найден");
         }
         return user;
     }
 
-    public boolean validationUser(User user) {
-        if (user.getEmail() != null && user.getEmail().contains("@")) {
-        } else {
+    public void validationUser(User user) {
+        if (user.getEmail() == null || !user.getEmail().contains("@")) {
             throw new ValidationException("Был введен некорректный E-mail");
         }
 
-        if (user.getLogin() != null && !user.getLogin().isBlank()) {
-        } else {
+        if (user.getLogin() == null || user.getLogin().isBlank()) {
             throw new ValidationException("Был введен некорректный логин");
         }
 
-        if (user.getBirthday() != null && !user.getBirthday().isAfter(controlDate)) {
-        } else {
+        if (user.getBirthday() == null || user.getBirthday().isAfter(controlDate)) {
             throw new ValidationException("Введенная дата позже чем текущая");
         }
-        return true;
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }

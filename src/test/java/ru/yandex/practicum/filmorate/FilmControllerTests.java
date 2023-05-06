@@ -5,8 +5,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-
 import java.time.LocalDateTime;
+
 
 @SpringBootTest
 class FilmControllerTests {
@@ -21,98 +21,94 @@ class FilmControllerTests {
 	}
 
 	@Test
-	void validationFilmNameTest() throws Exception {
-		LocalDateTime testTime = LocalDateTime.of(1967,03, 25, 0, 0, 0);
+	void validationFilmNameTest() {
+		LocalDateTime testTime = LocalDateTime.of(1967,3, 25, 0, 0, 0);
 		film.setName(null);
 		film.setDescription("adipisicing");
 		film.setReleaseDate(testTime);
 		film.setDuration(100);
-		try {
+
+		ValidationException nameExceptionOne = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий наименования фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное название фильма", nameExceptionOne.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 
 		film.setName("");
-		try {
+		ValidationException nameExceptionTwo = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий наименования фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное название фильма", nameExceptionTwo.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 
 		film.setName(" ");
-		try {
+		ValidationException nameExceptionThree = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий наименования фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное название фильма", nameExceptionThree.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 	}
 
 	@Test
-	void validationFilmDescriprionTest() throws Exception {
-		LocalDateTime testTime = LocalDateTime.of(1967,03, 25, 0, 0, 0);
+	void validationFilmDescriprionTest() {
+		LocalDateTime testTime = LocalDateTime.of(1967,3, 25, 0, 0, 0);
 		film.setName("nisi eiusmod");
 		film.setDescription(null);
 		film.setReleaseDate(testTime);
 		film.setDuration(100);
-		try {
+
+		ValidationException descriptionExceptionOne = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий описания фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное описание фильма", descriptionExceptionOne.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 
 		film.setDescription("");
-		try {
+		ValidationException descriptionExceptionTwo = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий описания фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное описание фильма", descriptionExceptionTwo.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 
 		film.setDescription(" ");
-		try {
+		ValidationException descriptionExceptionThree = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий описания фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное описание фильма", descriptionExceptionThree.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 
 		film.setDescription("qweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxc" +
 				"qweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxc" +
 				"qweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasdzxcqweasd");
-		try {
+		ValidationException descriptionExceptionFour = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий описания фильма");
-		}
+		});
+		Assertions.assertEquals("Введено некорректное описание фильма", descriptionExceptionFour.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 	}
 
 	@Test
-	void validationFilmReleaseDataTest() throws Exception {
-		LocalDateTime testTime = LocalDateTime.of(1880,03, 25, 0, 0, 0);
+	void validationFilmReleaseDataTest() {
+		LocalDateTime testTime = LocalDateTime.of(1880,3, 25, 0, 0, 0);
 		film.setName("nisi eiusmod");
 		film.setDescription("adipisicing");
 		film.setReleaseDate(testTime);
 		film.setDuration(100);
-		try {
+
+		ValidationException releaseDateExceptionOne = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий даты релиза");
-		}
+		});
+		Assertions.assertEquals("Дата выхода фильма раньше чем - 1895-12-28",
+				releaseDateExceptionOne.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 
 		film.setReleaseDate(null);
-		try {
+		ValidationException releaseDateExceptionTwo = Assertions.assertThrows(ValidationException.class, () -> {
 			filmController.addFilm(film);
-		} catch (ValidationException e) {
-			Assertions.assertEquals(0, filmController.allFilms(),
-					"Фильм не должен был добавиться, проверьте корректность проверки условий даты релиза");
-		}
+		});
+		Assertions.assertEquals("Дата выхода фильма раньше чем - 1895-12-28",
+				releaseDateExceptionTwo.getMessage(),
+				"Ошибка произошла не на наименовании фильма, проверьте корректность валидации");
 	}
 
 }

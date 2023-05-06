@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -21,84 +20,80 @@ public class UserControllerTest {
     }
 
     @Test
-    void validationUserNameTest() throws Exception {
-        LocalDateTime testBirthday = LocalDateTime.of(1990,03, 25, 0, 0, 0);
+    void validationUserNameTest() {
+        LocalDateTime testBirthday = LocalDateTime.of(1990,3, 25, 0, 0, 0);
         user.setName("");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
         user.setEmail("mail@mail.ru");
         userController.createUser(user);
-        Assertions.assertEquals(1, userController.allUsers(),
+        Assertions.assertEquals(user, userController.allUsers().get(0),
                 "Пользователь должен был добавиться, " +
                         "проверьте корректность проверки условий имени пользователя");
 
         user.setName(null);
         userController.createUser(user);
-        Assertions.assertEquals(2, userController.allUsers(),
+        Assertions.assertEquals(user, userController.allUsers().get(1),
                 "Пользователь должен был добавиться, " +
                         "проверьте корректность проверки условий имени пользователя");
     }
 
     @Test
     void validationUserEmailTest() {
-        LocalDateTime testBirthday = LocalDateTime.of(1990,03, 25, 0, 0, 0);
+        LocalDateTime testBirthday = LocalDateTime.of(1990,3, 25, 0, 0, 0);
         user.setName("Nick Name");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
         user.setEmail("");
-        try {
+
+        ValidationException userEmailExceptionOne = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий почты");
-        }
+        });
+        Assertions.assertEquals("Был введен некорректный E-mail", userEmailExceptionOne.getMessage(),
+                "Ошибка произошла не на E-mail, проверьте корректность валидации");
 
         user.setEmail(" ");
-        try {
+        ValidationException userEmailExceptionTwo = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий почты");
-        }
+        });
+        Assertions.assertEquals("Был введен некорректный E-mail", userEmailExceptionTwo.getMessage(),
+                "Ошибка произошла не на E-mail, проверьте корректность валидации");
 
         user.setEmail(null);
-        try {
+        ValidationException userEmailExceptionThree = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий почты");
-        }
+        });
+        Assertions.assertEquals("Был введен некорректный E-mail", userEmailExceptionThree.getMessage(),
+                "Ошибка произошла не на E-mail, проверьте корректность валидации");
     }
 
     @Test
     void validationUserLoginTest() {
-        LocalDateTime testBirthday = LocalDateTime.of(1990,03, 25, 0, 0, 0);
+        LocalDateTime testBirthday = LocalDateTime.of(1990,3, 25, 0, 0, 0);
         user.setName("Nick Name");
         user.setLogin("");
         user.setBirthday(testBirthday);
         user.setEmail("mail@mail.ru");
-        try {
+
+        ValidationException userLoginExceptionOne = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий логина");
-        }
+        });
+        Assertions.assertEquals("Был введен некорректный логин", userLoginExceptionOne.getMessage(),
+                "Ошибка произошла не на указании логина, проверьте корректность валидации");
 
         user.setLogin(" ");
-        try {
+        ValidationException userLoginExceptionTwo = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий логина");
-        }
+        });
+        Assertions.assertEquals("Был введен некорректный логин", userLoginExceptionTwo.getMessage(),
+                "Ошибка произошла не на указании логина, проверьте корректность валидации");
 
         user.setLogin(null);
-        try {
+        ValidationException userLoginExceptionThree = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий логина");
-        }
+        });
+        Assertions.assertEquals("Был введен некорректный логин", userLoginExceptionThree.getMessage(),
+                "Ошибка произошла не на указании логина, проверьте корректность валидации");
     }
 
     @Test
@@ -108,19 +103,18 @@ public class UserControllerTest {
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
         user.setEmail("mail@mail.ru");
-        try {
+
+        ValidationException userBirthdayExceptionOne = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий дня рождения");
-        }
+        });
+        Assertions.assertEquals("Введенная дата позже чем текущая", userBirthdayExceptionOne.getMessage(),
+                "Ошибка произошла не на указании даты рождения, проверьте корректность валидации");
 
         user.setBirthday(null);
-        try {
+        ValidationException userBirthdayExceptionTwo = Assertions.assertThrows(ValidationException.class, () -> {
             userController.createUser(user);
-        } catch (ValidationException e) {
-            Assertions.assertEquals(0, userController.allUsers(),
-                    "Пользователь не должен был добавиться, проверьте корректность проверки условий дня рождения");
-        }
+        });
+        Assertions.assertEquals("Введенная дата позже чем текущая", userBirthdayExceptionTwo.getMessage(),
+                "Ошибка произошла не на указании даты рождения, проверьте корректность валидации");
     }
 }
