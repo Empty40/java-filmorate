@@ -54,19 +54,19 @@ public class FilmController {
     }
 
     public void validationFilm(Film filmName) {
-            if (filmName.getName() == null || filmName.getName().isBlank()) {
-                throw new ValidationException("Введено некорректное название фильма");
-            }
-            if (filmName.getDescription() == null || filmName.getDescription().isBlank() ||
-                    filmName.getDescription().length() > 200) {
-                throw new ValidationException("Введено некорректное описание фильма");
-            }
-            if (filmName.getReleaseDate() == null || filmName.getReleaseDate().isBefore(CONTROL_DATE)) {
-                throw new ValidationException("Дата выхода фильма раньше чем - " + CONTROL_DATE);
-            }
-            if (filmName.getDuration() < 0) {
-                throw new ValidationException("Указана некорректная длительность фильма");
-            }
+        if (filmName.getName() == null || filmName.getName().isBlank()) {
+            throw new ValidationException("Введено некорректное название фильма");
+        }
+        if (filmName.getDescription() == null || filmName.getDescription().isBlank() ||
+                filmName.getDescription().length() > 200) {
+            throw new ValidationException("Введено некорректное описание фильма");
+        }
+        if (filmName.getReleaseDate() == null || filmName.getReleaseDate().isBefore(CONTROL_DATE)) {
+            throw new ValidationException("Дата выхода фильма раньше чем - " + CONTROL_DATE);
+        }
+        if (filmName.getDuration() < 0) {
+            throw new ValidationException("Указана некорректная длительность фильма");
+        }
     }
 
 }

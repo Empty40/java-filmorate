@@ -22,7 +22,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserNameTest() {
-        LocalDate testBirthday = LocalDate.of(1990,3, 25);
+        LocalDate testBirthday = LocalDate.of(1990, 3, 25);
         user.setName("");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
@@ -41,7 +41,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserEmailTest() {
-        LocalDate testBirthday = LocalDate.of(1990,3, 25);
+        LocalDate testBirthday = LocalDate.of(1990, 3, 25);
         user.setName("Nick Name");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
@@ -70,7 +70,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserLoginTest() {
-        LocalDate testBirthday = LocalDate.of(1990,3, 25);
+        LocalDate testBirthday = LocalDate.of(1990, 3, 25);
         user.setName("Nick Name");
         user.setLogin("");
         user.setBirthday(testBirthday);

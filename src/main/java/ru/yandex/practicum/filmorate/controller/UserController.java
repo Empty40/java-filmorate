@@ -30,11 +30,11 @@ public class UserController {
     @PostMapping
     public User createUser(@RequestBody User user) throws ValidationException {
         validationUser(user);
-            user.setId(idCount);
-            log.info("Был создан пользователь: {}", user);
-            users.put(idCount, user);
-            idCount++;
-            return user;
+        user.setId(idCount);
+        log.info("Был создан пользователь: {}", user);
+        users.put(idCount, user);
+        idCount++;
+        return user;
     }
 
     @PutMapping
