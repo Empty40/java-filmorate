@@ -5,6 +5,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -22,7 +24,7 @@ class FilmControllerTests {
 
 	@Test
 	void validationFilmNameTest() {
-		LocalDateTime testTime = LocalDateTime.of(1967,3, 25, 0, 0, 0);
+		LocalDate testTime = LocalDate.of(1967,3, 25);
 		film.setName(null);
 		film.setDescription("adipisicing");
 		film.setReleaseDate(testTime);
@@ -51,7 +53,7 @@ class FilmControllerTests {
 
 	@Test
 	void validationFilmDescriprionTest() {
-		LocalDateTime testTime = LocalDateTime.of(1967,3, 25, 0, 0, 0);
+		LocalDate testTime = LocalDate.of(1967,3, 25);
 		film.setName("nisi eiusmod");
 		film.setDescription(null);
 		film.setReleaseDate(testTime);
@@ -89,7 +91,7 @@ class FilmControllerTests {
 
 	@Test
 	void validationFilmReleaseDataTest() {
-		LocalDateTime testTime = LocalDateTime.of(1880,3, 25, 0, 0, 0);
+		LocalDate testTime = LocalDate.of(1880,3, 25);
 		film.setName("nisi eiusmod");
 		film.setDescription("adipisicing");
 		film.setReleaseDate(testTime);

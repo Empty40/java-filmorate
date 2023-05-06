@@ -5,7 +5,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
 
 @SpringBootTest
 public class UserControllerTest {
@@ -21,7 +22,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserNameTest() {
-        LocalDateTime testBirthday = LocalDateTime.of(1990,3, 25, 0, 0, 0);
+        LocalDate testBirthday = LocalDate.of(1990,3, 25);
         user.setName("");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
@@ -40,7 +41,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserEmailTest() {
-        LocalDateTime testBirthday = LocalDateTime.of(1990,3, 25, 0, 0, 0);
+        LocalDate testBirthday = LocalDate.of(1990,3, 25);
         user.setName("Nick Name");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
@@ -69,7 +70,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserLoginTest() {
-        LocalDateTime testBirthday = LocalDateTime.of(1990,3, 25, 0, 0, 0);
+        LocalDate testBirthday = LocalDate.of(1990,3, 25);
         user.setName("Nick Name");
         user.setLogin("");
         user.setBirthday(testBirthday);
@@ -98,7 +99,7 @@ public class UserControllerTest {
 
     @Test
     void validationUserBirthDayTest() {
-        LocalDateTime testBirthday = LocalDateTime.now().plusMonths(1);
+        LocalDate testBirthday = LocalDate.now().plusMonths(1);
         user.setName("Nick Name");
         user.setLogin("dolore");
         user.setBirthday(testBirthday);
