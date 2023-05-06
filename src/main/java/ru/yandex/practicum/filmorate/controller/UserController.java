@@ -6,7 +6,7 @@ import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -17,7 +17,7 @@ public class UserController {
 
     private HashMap<Integer, User> users = new HashMap<>();
 
-    private final LocalDateTime controlDate = LocalDateTime.now();
+    private final LocalDate controlDate = LocalDate.now();
 
     private int idCount = 1;
 

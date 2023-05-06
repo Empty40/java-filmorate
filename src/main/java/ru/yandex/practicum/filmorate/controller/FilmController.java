@@ -61,7 +61,7 @@ public class FilmController {
                     filmName.getDescription().length() > 200) {
                 throw new ValidationException("Введено некорректное описание фильма");
             }
-            if (filmName.getReleaseDate() == null || filmName.getReleaseDate().isBefore(CONTROL_DATE.atStartOfDay())) {
+            if (filmName.getReleaseDate() == null || filmName.getReleaseDate().isBefore(CONTROL_DATE)) {
                 throw new ValidationException("Дата выхода фильма раньше чем - " + CONTROL_DATE);
             }
             if (filmName.getDuration() < 0) {
