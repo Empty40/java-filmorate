@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.time.LocalDate;
 
@@ -14,10 +15,12 @@ public class UserControllerTest {
     static User user;
     static UserController userController;
 
+    static UserService userService;
+
     @BeforeEach
     public void beforeEach() {
         user = new User();
-        userController = new UserController();
+        userController = new UserController(userService);
     }
 
     @Test
@@ -28,13 +31,13 @@ public class UserControllerTest {
         user.setBirthday(testBirthday);
         user.setEmail("mail@mail.ru");
         userController.createUser(user);
-        Assertions.assertEquals(user, userController.allUsers().get(0),
+        Assertions.assertEquals(user, userController.getUsers().get(0),
                 "Пользователь должен был добавиться, " +
                         "проверьте корректность проверки условий имени пользователя");
 
         user.setName(null);
         userController.createUser(user);
-        Assertions.assertEquals(user, userController.allUsers().get(1),
+        Assertions.assertEquals(user, userController.getUsers().get(1),
                 "Пользователь должен был добавиться, " +
                         "проверьте корректность проверки условий имени пользователя");
     }
