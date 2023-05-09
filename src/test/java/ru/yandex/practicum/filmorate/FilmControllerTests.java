@@ -1,11 +1,13 @@
 package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import java.time.LocalDate;
 
@@ -14,12 +16,14 @@ class FilmControllerTests {
 
     static Film film;
     static FilmController filmController;
-
     static FilmService filmService;
+    static InMemoryFilmStorage inMemoryFilmStorage;
 
     @BeforeEach
     public void beforeEach() {
         film = new Film();
+        inMemoryFilmStorage = new InMemoryFilmStorage();
+        filmService = new FilmService(inMemoryFilmStorage);
         filmController = new FilmController(filmService);
     }
 
