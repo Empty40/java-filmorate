@@ -23,25 +23,9 @@ public class ExceptionApiHandler {
         );
     }
 
-    @ExceptionHandler(NullPointerException.class)
+    @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse nullHandler(final NullPointerException e) {
-        return new ErrorResponse(
-                "Ошибка данных", e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse illegalHandler(final IllegalArgumentException e) {
-        return new ErrorResponse(
-                "Ошибка данных", e.getMessage()
-        );
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse runtimeHandler(final RuntimeException e) {
+    public ErrorResponse errorHandler(final Throwable e) {
         return new ErrorResponse(
                 "Ошибка данных", e.getMessage()
         );
