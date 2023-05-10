@@ -16,10 +16,6 @@ public class Film {
     private int duration;
     private Set<Integer> userLike = new HashSet<>();
 
-    public Set<Integer> getLike() {
-        return userLike;
-    }
-
     public Integer getUserLikeCount() {
         return userLike.size();
     }

@@ -16,10 +16,6 @@ public class User {
     private LocalDate birthday;
     private Set<Integer> friends = new HashSet<>();
 
-    public Set<Integer> getFriends() {
-        return friends;
-    }
-
     public boolean addFriend(User user) {
         return friends.add(user.getId());
     }
