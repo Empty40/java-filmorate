@@ -305,7 +305,7 @@ public class FilmDaoImpl implements FilmDao {
 
         List<Film> popularFilms = new ArrayList<>();
 
-        int filmId = 0;
+        int filmId;
         while (filmIdCheck.next()) {
             filmId = filmIdCheck.getInt("FILM_ID");
             popularFilms.add(getFilmById(filmId));
