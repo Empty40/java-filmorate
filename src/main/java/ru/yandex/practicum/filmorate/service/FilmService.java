@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.sql.SQLException;
 import java.util.*;
 
 @Service
@@ -25,11 +24,7 @@ public class FilmService {
     }
 
     public Film addFilm(Film film) {
-        try {
-            return filmDao.addFilm(film);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return filmDao.addFilm(film);
     }
 
     public Film update(Film film) {
@@ -40,15 +35,11 @@ public class FilmService {
         filmDao.addLike(id, userId);
     }
 
-    public List<Film> mostPopularFilms(String count) {
+    public List<Film> mostPopularFilms(int count) {
         return filmDao.mostPopularFilms(count);
     }
 
     public void deleteLike(int id, int userId) {
         filmDao.deleteLike(id, userId);
-    }
-
-    public List<Film> allPopularFilms() {
-        return filmDao.allPopularFilms();
     }
 }

@@ -1,3 +1,4 @@
+/*
 package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.context.annotation.Bean;
@@ -17,4 +18,4 @@ public class DbSourse {
 
         return new JdbcTemplate(dataSource);
     }
-}
+}*/

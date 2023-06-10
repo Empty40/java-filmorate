@@ -2,13 +2,12 @@ package ru.yandex.practicum.filmorate.dao;
 
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public interface FilmDao {
     Film getFilmById(int id);
 
-    Film addFilm(Film film) throws SQLException;
+    Film addFilm(Film film);
 
     List<Film> getFilms();
 
@@ -16,9 +15,7 @@ public interface FilmDao {
 
     void addLike(int id, int userId);
 
-    List<Film> mostPopularFilms(String count);
+    List<Film> mostPopularFilms(int count);
 
     void deleteLike(int id, int userId);
-
-    List<Film> allPopularFilms();
 }

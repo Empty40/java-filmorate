@@ -24,15 +24,11 @@ public class MpaDaoImpl implements MpaDao {
     public Optional<Mpa> getMpaById(int id) {
         SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where MPA_ID = ?", id);
 
-        if (id > 5 || id < 0) {
-            throw new NotFoundException("Введен некорректный идентификатор");
-        }
-
         if (mpaRows.next()) {
             Mpa mpa = new Mpa(
                     mpaRows.getInt("MPA_ID")
             );
-            String values = mpaRows.getString("NAME");
+            String values = mpaRows.getString("MPA_NAME");
             mpa.setName(values);
 
             log.info("Найден mpa: {} {}", mpa.getId(),
@@ -41,7 +37,7 @@ public class MpaDaoImpl implements MpaDao {
             return Optional.of(mpa);
         } else {
             log.info("Фильм с идентификатором {} не найден.", id);
-            return Optional.empty();
+            throw new NotFoundException("Введен некорректный идентификатор");
         }
     }
 
@@ -53,7 +49,7 @@ public class MpaDaoImpl implements MpaDao {
             Mpa mpa = new Mpa(
                     mpaRows.getInt("MPA_ID")
             );
-            String values = mpaRows.getString("NAME");
+            String values = mpaRows.getString("MPA_NAME");
             mpa.setName(values);
 
             log.info("Найден mpa: {} {}", mpa.getId(),

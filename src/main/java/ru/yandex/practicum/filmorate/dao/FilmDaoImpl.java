@@ -25,7 +25,11 @@ public class FilmDaoImpl implements FilmDao {
 
     @Override
     public Film getFilmById(int id) {
-        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("select * from FILMS where FILM_ID = ?", id);
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT *" +
+                "FROM FILMS AS f " +
+                "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
+                "WHERE f.FILM_ID = ?" +
+                "GROUP BY f.FILM_ID", id);
 
         SqlRowSet genresRows = jdbcTemplate.queryForRowSet("select * from FILM_GENRES where FILM_ID = ?", id);
 
@@ -47,23 +51,13 @@ public class FilmDaoImpl implements FilmDao {
             HashMap<String, Integer> mpaId = new HashMap<>();
             mpaId.put("id", filmRows.getInt("MPA_ID"));
 
-            film = new Film(
-                    filmRows.getInt("FILM_ID"),
-                    filmRows.getString("NAME"),
+            film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"),
-                    mpaId,
-                    genreList);
+                    filmRows.getInt("DURATION"), mpaId, genreList);
 
-            SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
-                            " MPA_ID = ?",
-                    film.getMpa().getId());
-
-            if (mpaRows.next()) {
-                String values = mpaRows.getString("NAME");
-                film.getMpa().setName(values);
-            }
+            String values = filmRows.getString("MPA_NAME");
+            film.getMpa().setName(values);
 
             if (genreList.size() != 0) {
                 List<Genres> listGenres = film.getGenres();
@@ -85,7 +79,10 @@ public class FilmDaoImpl implements FilmDao {
 
     @Override
     public List<Film> getFilms() {
-        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("select * from FILMS");
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT *" +
+                "FROM FILMS AS f " +
+                "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
+                "GROUP BY f.FILM_ID");
         List<Film> films = new ArrayList<>();
 
         while (filmRows.next()) {
@@ -108,14 +105,10 @@ public class FilmDaoImpl implements FilmDao {
             HashMap<String, Integer> mpaId = new HashMap<>();
             mpaId.put("id", filmRows.getInt("MPA_ID"));
 
-            Film film = new Film(
-                    filmRows.getInt("FILM_ID"),
-                    filmRows.getString("NAME"),
+            Film film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"),
-                    mpaId,
-                    genreList);
+                    filmRows.getInt("DURATION"), mpaId, genreList);
 
             if (genreList.size() != 0) {
                 List<Genres> listGenres = film.getGenres();
@@ -130,14 +123,8 @@ public class FilmDaoImpl implements FilmDao {
 
             films.add(film);
 
-            SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
-                            " MPA_ID = ?",
-                    film.getMpa().getId());
-
-            if (mpaRows.next()) {
-                String values = mpaRows.getString("NAME");
-                film.getMpa().setName(values);
-            }
+            String values = filmRows.getString("MPA_NAME");
+            film.getMpa().setName(values);
         }
         return films;
     }
@@ -147,6 +134,7 @@ public class FilmDaoImpl implements FilmDao {
         validationFilm(film);
         SqlRowSet filmRows;
         int mpaId = film.getMpa().getId();
+        //KeyHolder keyHolder = new GeneratedKeyHolder();
 
         String sqlQuery = "INSERT INTO FILMS(NAME, DESCRIPTION, RELEASEDATE, DURATION, MPA_ID) " +
                 "VALUES(?, ?, ?, ?, ?)";
@@ -156,6 +144,20 @@ public class FilmDaoImpl implements FilmDao {
                 film.getReleaseDate(),
                 film.getDuration(),
                 mpaId);
+
+        /*jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection
+                    .prepareStatement(sqlQuery);
+            ps.setString(1, film.getName());
+            ps.setString(2, film.getDescription());
+            ps.setDate(3, Date.valueOf(film.getReleaseDate()));
+            ps.setInt(4, film.getDuration());
+            ps.setInt(5, mpaId);
+            return ps;
+        }, keyHolder);*/
+        //Не могу от слова совсем понять как корректно использовать keyHolder, запрос обрабатывается, данные попадают
+        //в БД, но этот холдер возвращается пустым, уже даже стал смотреть индусов которые обьясняют про keyHolder :D,
+        //оставлю это на следующую итерацию правок
 
         filmRows = jdbcTemplate.queryForRowSet("select * from FILMS where " +
                         " NAME = ?" +
@@ -185,7 +187,7 @@ public class FilmDaoImpl implements FilmDao {
         SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
                 " MPA_ID = ?", mpaId);
         if (mpaRows.next()) {
-            String values = mpaRows.getString("NAME");
+            String values = mpaRows.getString("MPA_NAME");
             film.getMpa().setName(values);
         }
 
@@ -199,13 +201,12 @@ public class FilmDaoImpl implements FilmDao {
             }
         }
 
-        if (film.getMpa() != null) {
-            String sqlQueryGenre = "INSERT INTO FILM_MPA(FILM_ID, MPA_ID)" +
-                    "VALUES(?, ?)";
-            jdbcTemplate.update(sqlQueryGenre,
-                    film.getId(),
-                    film.getMpa().getId());
-        }
+        String sqlQueryGenre = "INSERT INTO FILM_MPA(FILM_ID, MPA_ID)" +
+                "VALUES(?, ?)";
+        jdbcTemplate.update(sqlQueryGenre,
+                film.getId(),
+                film.getMpa().getId());
+
         return film;
     }
 
@@ -277,7 +278,7 @@ public class FilmDaoImpl implements FilmDao {
         SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
                 " MPA_ID = ?", mpaId);
         if (mpaRows.next()) {
-            String values = mpaRows.getString("NAME");
+            String values = mpaRows.getString("MPA_NAME");
             film.getMpa().setName(values);
         }
         return film;
@@ -295,62 +296,21 @@ public class FilmDaoImpl implements FilmDao {
     }
 
     @Override
-    public List<Film> mostPopularFilms(String count) {
-        if (count.equals("all")) {
-            count = "*";
-        }
-        SqlRowSet filmIdCheck = jdbcTemplate.queryForRowSet("SELECT FILM_ID, MAX(most_popular_film.FILM_ID) " +
-                "FROM (SELECT FILM_ID, COUNT(?) FROM FILM_LIKES GROUP BY FILM_ID) " +
-                "AS most_popular_film " +
-                "GROUP BY most_popular_film.FILM_ID", count);
+    public List<Film> mostPopularFilms(int count) {
+        SqlRowSet filmIdCheck = jdbcTemplate.queryForRowSet("SELECT f.FILM_ID, COUNT(?) FROM FILMS AS f " +
+                "LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID " +
+                "GROUP BY f.FILM_ID " +
+                "ORDER BY fl.FILM_ID DESC " +
+                "LIMIT(?)", count, count);
 
         List<Film> popularFilms = new ArrayList<>();
-        List<Integer> filmIdList = new ArrayList<>();
 
         int filmId = 0;
         while (filmIdCheck.next()) {
             filmId = filmIdCheck.getInt("FILM_ID");
             popularFilms.add(getFilmById(filmId));
-            filmIdList.add(filmId);
-        }
-
-        SqlRowSet allFilms = jdbcTemplate.queryForRowSet("SELECT * FROM FILMS");
-        if (filmId == 0) {
-            while (allFilms.next()) {
-                filmId = allFilms.getInt("FILM_ID");
-                popularFilms.add(getFilmById(filmId));
-            }
-        } else {
-            while (allFilms.next()) {
-                if (!count.equals("*")) {
-                    if (popularFilms.size() == Integer.parseInt(count)) {
-                        break;
-                    }
-                }
-                filmId = allFilms.getInt("FILM_ID");
-                if (!filmIdList.contains(filmId)) {
-                    popularFilms.add(getFilmById(filmId));
-                }
-            }
         }
         return popularFilms;
-    }
-
-    @Override
-    public List<Film> allPopularFilms() {
-        SqlRowSet filmIdCheck = jdbcTemplate.queryForRowSet("SELECT FILM_ID, MAX(most_popular_film.FILM_ID)" +
-                " FROM (SELECT FILM_ID, COUNT(*) FROM FILM_LIKES GROUP BY FILM_ID) " +
-                "AS most_popular_film " +
-                "GROUP BY most_popular_film.FILM_ID");
-
-        List<Film> allPopularFilms = new ArrayList<>();
-
-        int filmId = 0;
-        while (filmIdCheck.next()) {
-            filmId = filmIdCheck.getInt("FILM_ID");
-            allPopularFilms.add(getFilmById(filmId));
-        }
-        return allPopularFilms;
     }
 
     @Override
@@ -361,7 +321,20 @@ public class FilmDaoImpl implements FilmDao {
                 id, userId);
     }
 
-    public void checkMaxFilmId(int id) {
+    private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
+                                 HashMap<String, Integer> mpaId, List<HashMap<String, Integer>> genreList) {
+        Film film = new Film(
+                filmId,
+                name,
+                description,
+                releaseDate,
+                duration,
+                mpaId,
+                genreList);
+        return film;
+    }
+
+    private void checkMaxFilmId(int id) {
         SqlRowSet filmIdRows = jdbcTemplate.queryForRowSet("SELECT MAX(FILM_ID) FROM FILMS");
         int maxId = 0;
         if (filmIdRows.next()) {
@@ -372,7 +345,7 @@ public class FilmDaoImpl implements FilmDao {
         }
     }
 
-    public void checkMaxUserId(int id) {
+    private void checkMaxUserId(int id) {
         SqlRowSet userIdRows = jdbcTemplate.queryForRowSet("SELECT MAX(USER_ID) FROM USERS");
         int maxId = 0;
         if (userIdRows.next()) {
@@ -383,7 +356,7 @@ public class FilmDaoImpl implements FilmDao {
         }
     }
 
-    public void validationFilm(Film filmName) {
+    private void validationFilm(Film filmName) {
         if (filmName.getName() == null || filmName.getName().isBlank()) {
             throw new ValidationException("Введено некорректное название фильма");
         }

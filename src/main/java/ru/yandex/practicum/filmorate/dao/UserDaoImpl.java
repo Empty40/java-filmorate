@@ -33,11 +33,8 @@ public class UserDaoImpl implements UserDao {
         User user = null;
 
         if (userRows.next()) {
-            user = new User(
-                    userRows.getInt("USER_ID"),
-                    userRows.getString("EMAIL"),
-                    userRows.getString("LOGIN"),
-                    userRows.getString("NAME"),
+            user = createUserModel(userRows.getInt("USER_ID"), userRows.getString("EMAIL"),
+                    userRows.getString("LOGIN"), userRows.getString("NAME"),
                     userRows.getDate("BIRTHDAY").toLocalDate());
         }
         return user;
@@ -49,17 +46,9 @@ public class UserDaoImpl implements UserDao {
         List<User> users = new ArrayList<>();
 
         while (userRows.next()) {
-
-            int userId = userRows.getInt("USER_ID");
-
-            User user = new User(
-                    userRows.getInt("USER_ID"),
-                    userRows.getString("EMAIL"),
-                    userRows.getString("LOGIN"),
-                    userRows.getString("NAME"),
-                    userRows.getDate("BIRTHDAY").toLocalDate());
-
-            users.add(user);
+            users.add(createUserModel(userRows.getInt("USER_ID"), userRows.getString("EMAIL"),
+                    userRows.getString("LOGIN"), userRows.getString("NAME"),
+                    userRows.getDate("BIRTHDAY").toLocalDate()));
         }
         return users;
     }
@@ -141,38 +130,33 @@ public class UserDaoImpl implements UserDao {
     public List<User> getCommonFriends(int id, int otherUserId) {
         checkMaxId(id);
         checkMaxId(otherUserId);
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet("select * from FRIENDSHIP where USER_ID = ?" +
-                " AND FRIENDS = 1", id);
 
-        SqlRowSet otherUserRows = jdbcTemplate.queryForRowSet("select * from FRIENDSHIP where USER_ID = ?" +
-                " AND FRIENDS = 1", otherUserId);
+        SqlRowSet commonFriendsRows = jdbcTemplate.queryForRowSet("SELECT * " +
+                "FROM USERS AS u " +
+                "JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id " +
+                "WHERE (f.user_id = ? OR f.user_id = ?) AND friends = true " +
+                "ORDER BY f.friend_id", id, otherUserId);
 
-        List<Integer> userFriends = new ArrayList<>();
+        List<Integer> maybeCommonFriends = new ArrayList<>();
 
-        List<Integer> otherUserFriends = new ArrayList<>();
+        List<Integer> exactlyFriends = new ArrayList<>();
 
-        while (userRows.next()) {
-            userFriends.add(userRows.getInt("FRIEND_ID"));
-        }
-
-        while (otherUserRows.next()) {
-            otherUserFriends.add(otherUserRows.getInt("FRIEND_ID"));
-        }
-
-        List<Integer> commonFriends = new ArrayList<>();
-
-        for (Integer userId : userFriends) {
-            if (otherUserFriends.contains(userId)) {
-                commonFriends.add(userId);
+        while (commonFriendsRows.next()) {
+            int friendId = commonFriendsRows.getInt("FRIEND_ID");
+            if (!maybeCommonFriends.contains(friendId)) {
+                maybeCommonFriends.add(friendId);
+            } else {
+                exactlyFriends.add(friendId);
             }
         }
 
-        List<User> finallyCommonFriends = new ArrayList<>();
+        List<User> commonFriends = new ArrayList<>();
 
-        for (Integer commonFriendsId : commonFriends) {
-            finallyCommonFriends.add(getUser(commonFriendsId));
+        if (exactlyFriends.size() != 0) {
+            commonFriends.add(getUser(exactlyFriends.get(0)));
         }
-        return finallyCommonFriends;
+
+        return commonFriends;
     }
 
     public void addFriend(int id, int friendId) {
@@ -183,13 +167,12 @@ public class UserDaoImpl implements UserDao {
         jdbcTemplate.update(sqlQuery,
                 id,
                 friendId,
-                1);
+                true);
     }
 
     public List<User> getFriends(int id) {
-
         SqlRowSet userRows = jdbcTemplate.queryForRowSet("select * from FRIENDSHIP where USER_ID = ?" +
-                " AND FRIENDS = 1", id);
+                " AND FRIENDS = true", id);
 
         List<User> userFriends = new ArrayList<>();
 
@@ -204,12 +187,22 @@ public class UserDaoImpl implements UserDao {
         checkMaxId(friendId);
         String sqlQuery = "UPDATE FRIENDSHIP SET FRIENDS = ? WHERE USER_ID = ? AND FRIEND_ID = ?";
         jdbcTemplate.update(sqlQuery,
-                0,
+                false,
                 id,
                 friendId);
     }
 
-    public void checkMaxId(int id) {
+    private User createUserModel(int userId, String userEmail, String userLogin, String userName, LocalDate birthday) {
+        User user = new User(
+                userId,
+                userEmail,
+                userLogin,
+                userName,
+                birthday);
+        return user;
+    }
+
+    private void checkMaxId(int id) {
         SqlRowSet userIdRows = jdbcTemplate.queryForRowSet("SELECT MAX(USER_ID) FROM USERS");
         int maxId = 0;
         if (userIdRows.next()) {
@@ -220,7 +213,7 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
-    public void validationUser(User user) {
+    private void validationUser(User user) {
         if (user.getEmail() == null || !user.getEmail().contains("@")) {
             throw new ValidationException("Был введен некорректный E-mail");
         }
