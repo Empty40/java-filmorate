@@ -193,13 +193,12 @@ public class UserDaoImpl implements UserDao {
     }
 
     private User createUserModel(int userId, String userEmail, String userLogin, String userName, LocalDate birthday) {
-        User user = new User(
+        return new User(
                 userId,
                 userEmail,
                 userLogin,
                 userName,
                 birthday);
-        return user;
     }
 
     private void checkMaxId(int id) {

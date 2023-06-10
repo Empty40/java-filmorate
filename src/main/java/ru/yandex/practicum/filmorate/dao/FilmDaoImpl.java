@@ -323,7 +323,7 @@ public class FilmDaoImpl implements FilmDao {
 
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
                                  HashMap<String, Integer> mpaId, List<HashMap<String, Integer>> genreList) {
-        Film film = new Film(
+        return new Film(
                 filmId,
                 name,
                 description,
@@ -331,7 +331,6 @@ public class FilmDaoImpl implements FilmDao {
                 duration,
                 mpaId,
                 genreList);
-        return film;
     }
 
     private void checkMaxFilmId(int id) {
