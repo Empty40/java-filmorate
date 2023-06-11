@@ -26,10 +26,8 @@ public class MpaDaoImpl implements MpaDao {
 
         if (mpaRows.next()) {
             Mpa mpa = new Mpa(
-                    mpaRows.getInt("MPA_ID")
+                    mpaRows.getInt("MPA_ID"), mpaRows.getString("MPA_NAME")
             );
-            String values = mpaRows.getString("MPA_NAME");
-            mpa.setName(values);
 
             log.info("Найден mpa: {} {}", mpa.getId(),
                     mpa.getName());
@@ -47,10 +45,8 @@ public class MpaDaoImpl implements MpaDao {
 
         while (mpaRows.next()) {
             Mpa mpa = new Mpa(
-                    mpaRows.getInt("MPA_ID")
+                    mpaRows.getInt("MPA_ID"), mpaRows.getString("MPA_NAME")
             );
-            String values = mpaRows.getString("MPA_NAME");
-            mpa.setName(values);
 
             log.info("Найден mpa: {} {}", mpa.getId(),
                     mpa.getName());

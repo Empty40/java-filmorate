@@ -1,19 +1,24 @@
 package ru.yandex.practicum.filmorate.dao;
 
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genres;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 
 @Component
-@Slf4j
 public class FilmDaoImpl implements FilmDao {
     private final JdbcTemplate jdbcTemplate;
 
@@ -31,48 +36,24 @@ public class FilmDaoImpl implements FilmDao {
                 "WHERE f.FILM_ID = ?" +
                 "GROUP BY f.FILM_ID", id);
 
-        SqlRowSet genresRows = jdbcTemplate.queryForRowSet("select * from FILM_GENRES where FILM_ID = ?", id);
-
         checkMaxFilmId(id);
-
-        List<HashMap<String, Integer>> genreList = new ArrayList<>();
 
         Film film = null;
 
-        while (genresRows.next()) {
-            if (genresRows.getInt("GENRE_ID") != 0) {
-                HashMap<String, Integer> genreId = new HashMap<>();
-                genreId.put("id", genresRows.getInt("GENRE_ID"));
-                genreList.add(genreId);
-            }
-        }
+        List<HashMap<String, Integer>> genreList = createGenreList(id);
 
         if (filmRows.next()) {
-            HashMap<String, Integer> mpaId = new HashMap<>();
-            mpaId.put("id", filmRows.getInt("MPA_ID"));
+            int mpaId = filmRows.getInt("MPA_ID");
 
             film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"), mpaId, genreList);
+                    filmRows.getInt("DURATION"), createMpaHashMap(mpaId), genreList);
 
             String values = filmRows.getString("MPA_NAME");
             film.getMpa().setName(values);
 
-            if (genreList.size() != 0) {
-                List<Genres> listGenres = film.getGenres();
-                for (Genres genre : listGenres) {
-                    SqlRowSet genreNameRows = jdbcTemplate.queryForRowSet("select * from GENRES where " +
-                            " GENRE_ID = ?", genre.getId());
-                    if (genreNameRows.next()) {
-                        genre.setName(genreNameRows.getString("NAME"));
-                    }
-                }
-            }
-            log.info("Найден фильм: {} {}", film.getId(),
-                    film.getName());
-        } else {
-            log.info("Фильм с идентификатором {} не найден.", id);
+            getNameForGenres(film);
         }
         return film;
     }
@@ -89,42 +70,19 @@ public class FilmDaoImpl implements FilmDao {
 
             int filmId = filmRows.getInt("FILM_ID");
 
-            SqlRowSet genresRows = jdbcTemplate.queryForRowSet("select * from FILM_GENRES where FILM_ID = ?",
-                    filmId);
-
-            List<HashMap<String, Integer>> genreList = new ArrayList<>();
-
-            while (genresRows.next()) {
-                if (genresRows.getInt("GENRE_ID") != 0) {
-                    HashMap<String, Integer> genreId = new HashMap<>();
-                    genreId.put("id", genresRows.getInt("GENRE_ID"));
-                    genreList.add(genreId);
-                }
-            }
-
-            HashMap<String, Integer> mpaId = new HashMap<>();
-            mpaId.put("id", filmRows.getInt("MPA_ID"));
-
             Film film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"), mpaId, genreList);
+                    filmRows.getInt("DURATION"),
+                    createMpaHashMap(filmRows.getInt("MPA_ID")),
+                    createGenreList(filmId));
 
-            if (genreList.size() != 0) {
-                List<Genres> listGenres = film.getGenres();
-                for (Genres genre : listGenres) {
-                    SqlRowSet genreNameRows = jdbcTemplate.queryForRowSet("select * from GENRES where " +
-                            " GENRE_ID = ?", genre.getId());
-                    if (genreNameRows.next()) {
-                        genre.setName(genreNameRows.getString("NAME"));
-                    }
-                }
-            }
-
-            films.add(film);
+            getNameForGenres(film);
 
             String values = filmRows.getString("MPA_NAME");
             film.getMpa().setName(values);
+
+            films.add(film);
         }
         return films;
     }
@@ -132,57 +90,28 @@ public class FilmDaoImpl implements FilmDao {
     @Override
     public Film addFilm(Film film) {
         validationFilm(film);
-        SqlRowSet filmRows;
         int mpaId = film.getMpa().getId();
-        //KeyHolder keyHolder = new GeneratedKeyHolder();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
         String sqlQuery = "INSERT INTO FILMS(NAME, DESCRIPTION, RELEASEDATE, DURATION, MPA_ID) " +
                 "VALUES(?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sqlQuery,
-                film.getName(),
-                film.getDescription(),
-                film.getReleaseDate(),
-                film.getDuration(),
-                mpaId);
 
-        /*jdbcTemplate.update(connection -> {
+        jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection
-                    .prepareStatement(sqlQuery);
+                    .prepareStatement(sqlQuery, new String[]{"FILM_ID"});
             ps.setString(1, film.getName());
             ps.setString(2, film.getDescription());
             ps.setDate(3, Date.valueOf(film.getReleaseDate()));
             ps.setInt(4, film.getDuration());
             ps.setInt(5, mpaId);
             return ps;
-        }, keyHolder);*/
-        //Не могу от слова совсем понять как корректно использовать keyHolder, запрос обрабатывается, данные попадают
-        //в БД, но этот холдер возвращается пустым, уже даже стал смотреть индусов которые обьясняют про keyHolder :D,
-        //оставлю это на следующую итерацию правок
+        }, keyHolder);
 
-        filmRows = jdbcTemplate.queryForRowSet("select * from FILMS where " +
-                        " NAME = ?" +
-                        " AND DESCRIPTION = ?" +
-                        " AND RELEASEDATE = ?" +
-                        " AND DURATION = ?" +
-                        " AND MPA_ID = ?",
-                film.getName(),
-                film.getDescription(),
-                film.getReleaseDate(),
-                film.getDuration(),
-                mpaId);
-
-        if (filmRows.next()) {
-            film.setId(filmRows.getInt("FILM_ID"));
-        }
+        film.setId(keyHolder.getKey().intValue());
 
         List<Genres> listGenres = film.getGenres();
-        for (Genres genre : listGenres) {
-            String sqlQueryGenres = "INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID)" +
-                    "VALUES(?, ?)";
-            jdbcTemplate.update(sqlQueryGenres,
-                    film.getId(),
-                    genre.getId());
-        }
+
+        batchUpdateTest(film.getId(), listGenres);
 
         SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
                 " MPA_ID = ?", mpaId);
@@ -191,15 +120,13 @@ public class FilmDaoImpl implements FilmDao {
             film.getMpa().setName(values);
         }
 
+        List<Integer> listIdGenres = new ArrayList<>();
         for (Genres genre : listGenres) {
-            int genreId = genre.getId();
-            SqlRowSet genreRows = jdbcTemplate.queryForRowSet("select * from GENRES where " +
-                    " GENRE_ID = ?", genreId);
-            if (genreRows.next()) {
-                String values = genreRows.getString("NAME");
-                genre.setName(values);
-            }
+            listIdGenres.add(genre.getId());
         }
+
+        listGenres.clear();
+        listGenres.addAll(getGenresFromIdList(listIdGenres));
 
         String sqlQueryGenre = "INSERT INTO FILM_MPA(FILM_ID, MPA_ID)" +
                 "VALUES(?, ?)";
@@ -228,52 +155,22 @@ public class FilmDaoImpl implements FilmDao {
 
         List<Genres> listGenres = film.getGenres();
 
-        List<Integer> idGenres = new ArrayList<>();
+        jdbcTemplate.update("DELETE FROM FILM_GENRES where FILM_ID = ?", film.getId());
 
+        List<Integer> listIdGenres = new ArrayList<>();
         for (Genres genre : listGenres) {
-            SqlRowSet genreRows = jdbcTemplate.queryForRowSet("select * from FILM_GENRES where " +
-                    " GENRE_ID = ?", genre.getId());
-            if (genreRows.next()) {
-                SqlRowSet genreNameRows = jdbcTemplate.queryForRowSet("select * from GENRES where " +
-                        " GENRE_ID = ?", genre.getId());
-                if (genreNameRows.next()) {
-                    String values = genreNameRows.getString("NAME");
-                    genre.setName(values);
-                }
-                idGenres.add(genre.getId());
-            } else {
-                String sqlQueryGenres = "INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID)" +
-                        "VALUES(?, ?)";
-                jdbcTemplate.update(sqlQueryGenres,
-                        film.getId(),
-                        genre.getId());
-
-                SqlRowSet genreNameRows = jdbcTemplate.queryForRowSet("select * from GENRES where " +
-                        " GENRE_ID = ?", genre.getId());
-                if (genreNameRows.next()) {
-                    String values = genreNameRows.getString("NAME");
-                    genre.setName(values);
-                }
-                idGenres.add(genre.getId());
-            }
+            listIdGenres.add(genre.getId());
         }
+        listGenres.clear();
+        listGenres.addAll(getGenresFromIdList(listIdGenres));
 
-        SqlRowSet genreForDeleteRows = jdbcTemplate.queryForRowSet("select * from FILM_GENRES where FILM_ID = ?",
-                film.getId());
-
-        while (genreForDeleteRows.next()) {
-            int idGenre = genreForDeleteRows.getInt("GENRE_ID");
-            if (!idGenres.contains(idGenre)) {
-                jdbcTemplate.update("DELETE FROM FILM_GENRES where GENRE_ID = ? and FILM_ID = ?",
-                        idGenre, film.getId());
-            }
-        }
-
-        Set<Genres> set = new HashSet<>(listGenres);
+        Set<Genres> genres = new LinkedHashSet<>(listGenres);
 
         listGenres.clear();
 
-        listGenres.addAll(set);
+        listGenres.addAll(genres);
+
+        batchUpdateTest(film.getId(), listGenres);
 
         SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
                 " MPA_ID = ?", mpaId);
@@ -297,20 +194,41 @@ public class FilmDaoImpl implements FilmDao {
 
     @Override
     public List<Film> mostPopularFilms(int count) {
-        SqlRowSet filmIdCheck = jdbcTemplate.queryForRowSet("SELECT f.FILM_ID, COUNT(?) FROM FILMS AS f " +
-                "LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID " +
-                "GROUP BY f.FILM_ID " +
-                "ORDER BY fl.FILM_ID DESC " +
-                "LIMIT(?)", count, count);
+        List<Film> mostPopularFilms;
 
-        List<Film> popularFilms = new ArrayList<>();
+        mostPopularFilms = jdbcTemplate.query("SELECT *, COUNT(?) FROM FILMS AS f " +
+                        "LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID " +
+                        "GROUP BY f.FILM_ID " +
+                        "ORDER BY fl.FILM_ID DESC " +
+                        "LIMIT(?)",
+                (rs, rowNum) ->
+                        new Film(rs.getInt("FILM_ID"),
+                                rs.getString("NAME"),
+                                rs.getString("DESCRIPTION"),
+                                rs.getDate("RELEASEDATE").toLocalDate(),
+                                rs.getInt("DURATION"),
+                                createMpaHashMap(rs.getInt("MPA_ID")),
+                                createGenreList(rs.getInt("FILM_ID"))
+                        ),
+                count, count);
 
-        int filmId;
-        while (filmIdCheck.next()) {
-            filmId = filmIdCheck.getInt("FILM_ID");
-            popularFilms.add(getFilmById(filmId));
+        List<Integer> mpaId = new ArrayList<>();
+
+        for (Film film : mostPopularFilms) {
+            mpaId.add(film.getMpa().getId());
         }
-        return popularFilms;
+
+        List<Mpa> mpaList = getNameForMpa(mpaId);
+
+        ListIterator<Film> filmListIterator = mostPopularFilms.listIterator();
+
+        ListIterator<Mpa> mpaListIterator = mpaList.listIterator();
+
+        while (filmListIterator.hasNext()) {
+            Film film = filmListIterator.next();
+            film.setMpa(mpaListIterator.next());
+        }
+        return mostPopularFilms;
     }
 
     @Override
@@ -331,6 +249,71 @@ public class FilmDaoImpl implements FilmDao {
                 duration,
                 mpaId,
                 genreList);
+    }
+
+    public void batchUpdateTest(int id, List<Genres> listGenres) {
+        jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES(?, ?)", new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
+                preparedStatement.setInt(1, id);
+                preparedStatement.setInt(2, listGenres.get(i).getId());
+            }
+
+            @Override
+            public int getBatchSize() {
+                return listGenres.size();
+            }
+        });
+    }
+
+    private List<Genres> getGenresFromIdList(List<Integer> ids) {
+        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
+
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM GENRES WHERE GENRE_ID IN (%s)", inSql),
+                ids.toArray(),
+                (rs, rowNum) -> new Genres(rs.getInt("GENRE_ID"), rs.getString("NAME")));
+    }
+
+    private HashMap<String, Integer> createMpaHashMap(int mpaId) {
+        HashMap<String, Integer> mpaIdMap = new HashMap<>();
+        mpaIdMap.put("id", mpaId);
+        return mpaIdMap;
+    }
+
+    private List<Mpa> getNameForMpa(List<Integer> ids) {
+        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
+
+        return jdbcTemplate.query(
+                String.format("SELECT * FROM MPA WHERE MPA_ID IN (%s)", inSql),
+                ids.toArray(),
+                (rs, rowNum) -> new Mpa(rs.getInt("MPA_ID"), rs.getString("MPA_NAME")));
+    }
+
+    private List<HashMap<String, Integer>> createGenreList(int filmId) {
+        List<HashMap<String, Integer>> genreList = new ArrayList<>();
+
+        List<Genres> genreIdList;
+
+        genreIdList = jdbcTemplate.query("select * from FILM_GENRES where FILM_ID = ?",
+                (rs, rowNum) -> new Genres(rs.getInt("GENRE_ID"), ""), filmId);
+
+        for (Genres genres : genreIdList) {
+            HashMap<String, Integer> genreId = new HashMap<>();
+            genreId.put("id", genres.getId());
+            genreList.add(genreId);
+        }
+        return genreList;
+    }
+
+    private void getNameForGenres(Film film) {
+        List<Genres> listGenres = film.getGenres();
+        List<Integer> listIdGenres = new ArrayList<>();
+        for (Genres genre : listGenres) {
+            listIdGenres.add(genre.getId());
+        }
+        listGenres.clear();
+        listGenres.addAll(getGenresFromIdList(listIdGenres));
     }
 
     private void checkMaxFilmId(int id) {

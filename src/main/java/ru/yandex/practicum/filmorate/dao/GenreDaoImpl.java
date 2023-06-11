@@ -29,11 +29,12 @@ public class GenreDaoImpl implements GenreDao {
         }
 
         if (genreRows.next()) {
-            Genres genres = new Genres(
-                    genreRows.getInt("GENRE_ID")
-            );
             String values = genreRows.getString("NAME");
-            genres.setName(values);
+            Genres genres = new Genres(
+                    genreRows.getInt("GENRE_ID"),
+                    values);
+
+
 
             log.info("Найден mpa: {} {}", genres.getId(),
                     genres.getName());
@@ -50,11 +51,12 @@ public class GenreDaoImpl implements GenreDao {
         List<Genres> allGenres = new ArrayList<>();
 
         while (genreRows.next()) {
-            Genres genres = new Genres(
-                    genreRows.getInt("GENRE_ID")
-            );
             String values = genreRows.getString("NAME");
-            genres.setName(values);
+
+            Genres genres = new Genres(
+                    genreRows.getInt("GENRE_ID"),
+                    values);
+
 
             log.info("Найден mpa: {} {}", genres.getId(),
                     genres.getName());

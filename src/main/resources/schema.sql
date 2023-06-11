@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS FILMS
 CREATE TABLE IF NOT EXISTS FILM_LIKES
 (
     film_id integer REFERENCES FILMS (film_id),
-    user_id integer
+    user_id integer REFERENCES USERS (user_id)
 );
 
 CREATE TABLE IF NOT EXISTS FILM_MPA

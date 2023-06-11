@@ -3,13 +3,16 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.Data;
 import lombok.NonNull;
 
+import javax.validation.constraints.NotBlank;
+
 @Data
 public class Genres {
     private Integer id;
-    @NonNull
+    @NotBlank
     private String name;
 
-    public Genres(int id) {
+    public Genres(int id, String name) {
         this.id = id;
+        this.name = name;
     }
 }

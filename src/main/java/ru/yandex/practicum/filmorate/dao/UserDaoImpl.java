@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dao;
 
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -8,12 +9,12 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@Slf4j
 public class UserDaoImpl implements UserDao {
 
     private final JdbcTemplate jdbcTemplate;
@@ -26,77 +27,67 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User getUser(int id) {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet("select * from USERS where USER_ID = ?", id);
-
         checkMaxId(id);
+        List<User> users;
 
-        User user = null;
-
-        if (userRows.next()) {
-            user = createUserModel(userRows.getInt("USER_ID"), userRows.getString("EMAIL"),
-                    userRows.getString("LOGIN"), userRows.getString("NAME"),
-                    userRows.getDate("BIRTHDAY").toLocalDate());
-        }
-        return user;
+        users = jdbcTemplate.query("select * from USERS where USER_ID = ?",
+                (rs, rowNum) ->
+                        new User(
+                                rs.getInt("USER_ID"),
+                                rs.getString("EMAIL"),
+                                rs.getString("LOGIN"),
+                                rs.getString("NAME"),
+                                rs.getDate("BIRTHDAY").toLocalDate()
+                        ),
+                id);
+        return users.get(0);
     }
 
     @Override
     public List<User> getUsers() {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet("select * from USERS");
-        List<User> users = new ArrayList<>();
-
-        while (userRows.next()) {
-            users.add(createUserModel(userRows.getInt("USER_ID"), userRows.getString("EMAIL"),
-                    userRows.getString("LOGIN"), userRows.getString("NAME"),
-                    userRows.getDate("BIRTHDAY").toLocalDate()));
-        }
-        return users;
+        return jdbcTemplate.query("select * from USERS",
+                (rs, rowNum) ->
+                        new User(
+                                rs.getInt("USER_ID"),
+                                rs.getString("EMAIL"),
+                                rs.getString("LOGIN"),
+                                rs.getString("NAME"),
+                                rs.getDate("BIRTHDAY").toLocalDate()
+                        )
+        );
     }
 
     @Override
     public User createUser(User user) {
         validationUser(user);
-        SqlRowSet userRows;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
         String sqlQuery = "INSERT INTO USERS(EMAIL, LOGIN, NAME, BIRTHDAY) " +
                 "VALUES(?, ?, ?, ?)";
         if (user.getName().equals(user.getLogin())) {
-            jdbcTemplate.update(sqlQuery,
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getLogin(),
-                    user.getBirthday());
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection
+                        .prepareStatement(sqlQuery, new String[]{"USER_ID"});
+                ps.setString(1, user.getEmail());
+                ps.setString(2, user.getLogin());
+                ps.setString(3, user.getLogin());
+                ps.setDate(4, Date.valueOf(user.getBirthday()));
+                return ps;
+            }, keyHolder);
 
-            userRows = jdbcTemplate.queryForRowSet("select * from USERS where " +
-                            " EMAIL = ?" +
-                            " AND LOGIN = ?" +
-                            " AND NAME = ?" +
-                            " AND BIRTHDAY = ?",
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getLogin(),
-                    user.getBirthday());
-
+            user.setId(keyHolder.getKey().intValue());
         } else {
-            jdbcTemplate.update(sqlQuery,
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getName(),
-                    user.getBirthday());
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection
+                        .prepareStatement(sqlQuery, new String[]{"USER_ID"});
+                ps.setString(1, user.getEmail());
+                ps.setString(2, user.getLogin());
+                ps.setString(3, user.getName());
+                ps.setDate(4, Date.valueOf(user.getBirthday()));
+                return ps;
+            }, keyHolder);
 
-            userRows = jdbcTemplate.queryForRowSet("select * from USERS where " +
-                            " EMAIL = ?" +
-                            " AND LOGIN = ?" +
-                            " AND NAME = ?" +
-                            " AND BIRTHDAY = ?",
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getName(),
-                    user.getBirthday());
-        }
-
-        if (userRows.next()) {
-            user.setId(userRows.getInt("USER_ID"));
+            user.setId(keyHolder.getKey().intValue());
         }
         return user;
     }
@@ -131,32 +122,20 @@ public class UserDaoImpl implements UserDao {
         checkMaxId(id);
         checkMaxId(otherUserId);
 
-        SqlRowSet commonFriendsRows = jdbcTemplate.queryForRowSet("SELECT * " +
-                "FROM USERS AS u " +
-                "JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id " +
-                "WHERE (f.user_id = ? OR f.user_id = ?) AND friends = true " +
-                "ORDER BY f.friend_id", id, otherUserId);
-
-        List<Integer> maybeCommonFriends = new ArrayList<>();
-
-        List<Integer> exactlyFriends = new ArrayList<>();
-
-        while (commonFriendsRows.next()) {
-            int friendId = commonFriendsRows.getInt("FRIEND_ID");
-            if (!maybeCommonFriends.contains(friendId)) {
-                maybeCommonFriends.add(friendId);
-            } else {
-                exactlyFriends.add(friendId);
-            }
-        }
-
-        List<User> commonFriends = new ArrayList<>();
-
-        if (exactlyFriends.size() != 0) {
-            commonFriends.add(getUser(exactlyFriends.get(0)));
-        }
-
-        return commonFriends;
+        return jdbcTemplate.query("SELECT * " +
+                        "FROM USERS AS u " +
+                        "JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id " +
+                        "JOIN FRIENDSHIP AS fr ON fr.friend_id = f.friend_id " +
+                        "WHERE f.friends = true AND (f.user_id = ? AND fr.user_id = ?)",
+                (rs, rowNum) ->
+                        new User(
+                                rs.getInt("USER_ID"),
+                                rs.getString("EMAIL"),
+                                rs.getString("LOGIN"),
+                                rs.getString("NAME"),
+                                rs.getDate("BIRTHDAY").toLocalDate()
+                        ), id, otherUserId
+        );
     }
 
     public void addFriend(int id, int friendId) {
@@ -171,15 +150,17 @@ public class UserDaoImpl implements UserDao {
     }
 
     public List<User> getFriends(int id) {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet("select * from FRIENDSHIP where USER_ID = ?" +
-                " AND FRIENDS = true", id);
-
-        List<User> userFriends = new ArrayList<>();
-
-        while (userRows.next()) {
-            userFriends.add(getUser(userRows.getInt("FRIEND_ID")));
-        }
-        return userFriends;
+        return jdbcTemplate.query("select * from USERS AS u JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id where f.USER_ID = ?" +
+                        " AND f.FRIENDS = true",
+                (rs, rowNum) ->
+                        new User(
+                                rs.getInt("USER_ID"),
+                                rs.getString("EMAIL"),
+                                rs.getString("LOGIN"),
+                                rs.getString("NAME"),
+                                rs.getDate("BIRTHDAY").toLocalDate()
+                        ),
+                id);
     }
 
     public void deleteFriend(int id, int friendId) {
@@ -190,15 +171,6 @@ public class UserDaoImpl implements UserDao {
                 false,
                 id,
                 friendId);
-    }
-
-    private User createUserModel(int userId, String userEmail, String userLogin, String userName, LocalDate birthday) {
-        return new User(
-                userId,
-                userEmail,
-                userLogin,
-                userName,
-                birthday);
     }
 
     private void checkMaxId(int id) {

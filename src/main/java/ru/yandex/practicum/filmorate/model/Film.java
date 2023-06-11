@@ -25,15 +25,15 @@ public class Film {
         this.description = description;
         this.releaseDate = releaseDate;
         this.duration = duration;
-        this.mpa = new Mpa(mpa.get("id"));
+        this.mpa = new Mpa(mpa.get("id"), "");
 
         if (genres != null && genres.size() != 0) {
             if (genres.size() > 1) {
                 for (HashMap<String, Integer> genre : genres) {
-                    this.genres.add(new Genres(genre.get("id")));
+                    this.genres.add(new Genres(genre.get("id"), ""));
                 }
             } else {
-                this.genres.add(new Genres(genres.get(0).get("id")));
+                this.genres.add(new Genres(genres.get(0).get("id"), ""));
             }
         }
     }
