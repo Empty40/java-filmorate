@@ -10,10 +10,10 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genres;
-import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
@@ -40,7 +40,7 @@ public class FilmDaoImpl implements FilmDao {
 
         Film film = null;
 
-        List<HashMap<String, Integer>> genreList = createGenreList(id);
+        List<Film> filmList = new ArrayList<>();
 
         if (filmRows.next()) {
             int mpaId = filmRows.getInt("MPA_ID");
@@ -48,13 +48,13 @@ public class FilmDaoImpl implements FilmDao {
             film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"), createMpaHashMap(mpaId), genreList);
-
-            String values = filmRows.getString("MPA_NAME");
-            film.getMpa().setName(values);
-
-            getNameForGenres(film);
+                    filmRows.getInt("DURATION"), mpaId, filmRows.getString("MPA_NAME")
+            );
         }
+        filmList.add(film);
+
+        setGenresForFilmIdList(filmList);
+
         return film;
     }
 
@@ -66,6 +66,8 @@ public class FilmDaoImpl implements FilmDao {
                 "GROUP BY f.FILM_ID");
         List<Film> films = new ArrayList<>();
 
+        List<Integer> filmIdList = new ArrayList<>();
+
         while (filmRows.next()) {
 
             int filmId = filmRows.getInt("FILM_ID");
@@ -74,16 +76,16 @@ public class FilmDaoImpl implements FilmDao {
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
                     filmRows.getInt("DURATION"),
-                    createMpaHashMap(filmRows.getInt("MPA_ID")),
-                    createGenreList(filmId));
+                    filmRows.getInt("MPA_ID"),
+                    filmRows.getString(("MPA_NAME"))
+            );
 
-            getNameForGenres(film);
-
-            String values = filmRows.getString("MPA_NAME");
-            film.getMpa().setName(values);
+            filmIdList.add(filmId);
 
             films.add(film);
         }
+        setGenresForFilmIdList(films);
+
         return films;
     }
 
@@ -120,13 +122,13 @@ public class FilmDaoImpl implements FilmDao {
             film.getMpa().setName(values);
         }
 
-        List<Integer> listIdGenres = new ArrayList<>();
-        for (Genres genre : listGenres) {
-            listIdGenres.add(genre.getId());
-        }
+        List<Film> filmList = new ArrayList<>();
+
+        filmList.add(film);
 
         listGenres.clear();
-        listGenres.addAll(getGenresFromIdList(listIdGenres));
+
+        setGenresForFilmIdList(filmList);
 
         String sqlQueryGenre = "INSERT INTO FILM_MPA(FILM_ID, MPA_ID)" +
                 "VALUES(?, ?)";
@@ -153,24 +155,23 @@ public class FilmDaoImpl implements FilmDao {
                 mpaId,
                 film.getId());
 
-        List<Genres> listGenres = film.getGenres();
-
         jdbcTemplate.update("DELETE FROM FILM_GENRES where FILM_ID = ?", film.getId());
 
-        List<Integer> listIdGenres = new ArrayList<>();
-        for (Genres genre : listGenres) {
-            listIdGenres.add(genre.getId());
-        }
-        listGenres.clear();
-        listGenres.addAll(getGenresFromIdList(listIdGenres));
+        List<Film> filmList = new ArrayList<>();
 
-        Set<Genres> genres = new LinkedHashSet<>(listGenres);
+        filmList.add(film);
 
-        listGenres.clear();
+        Set<Genres> genres = new LinkedHashSet<>(film.getGenres());
 
-        listGenres.addAll(genres);
+        film.getGenres().clear();
 
-        batchUpdateTest(film.getId(), listGenres);
+        film.getGenres().addAll(genres);
+
+        batchUpdateTest(film.getId(), film.getGenres());
+
+        film.getGenres().clear();
+
+        setGenresForFilmIdList(filmList);
 
         SqlRowSet mpaRows = jdbcTemplate.queryForRowSet("select * from MPA where " +
                 " MPA_ID = ?", mpaId);
@@ -198,36 +199,23 @@ public class FilmDaoImpl implements FilmDao {
 
         mostPopularFilms = jdbcTemplate.query("SELECT *, COUNT(?) FROM FILMS AS f " +
                         "LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID " +
+                        "LEFT OUTER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
                         "GROUP BY f.FILM_ID " +
                         "ORDER BY fl.FILM_ID DESC " +
                         "LIMIT(?)",
                 (rs, rowNum) ->
-                        new Film(rs.getInt("FILM_ID"),
+                        createFilmModel(rs.getInt("FILM_ID"),
                                 rs.getString("NAME"),
                                 rs.getString("DESCRIPTION"),
                                 rs.getDate("RELEASEDATE").toLocalDate(),
                                 rs.getInt("DURATION"),
-                                createMpaHashMap(rs.getInt("MPA_ID")),
-                                createGenreList(rs.getInt("FILM_ID"))
+                                rs.getInt("MPA_ID"),
+                                rs.getString("MPA_NAME")
                         ),
                 count, count);
 
-        List<Integer> mpaId = new ArrayList<>();
+        setGenresForFilmIdList(mostPopularFilms);
 
-        for (Film film : mostPopularFilms) {
-            mpaId.add(film.getMpa().getId());
-        }
-
-        List<Mpa> mpaList = getNameForMpa(mpaId);
-
-        ListIterator<Film> filmListIterator = mostPopularFilms.listIterator();
-
-        ListIterator<Mpa> mpaListIterator = mpaList.listIterator();
-
-        while (filmListIterator.hasNext()) {
-            Film film = filmListIterator.next();
-            film.setMpa(mpaListIterator.next());
-        }
         return mostPopularFilms;
     }
 
@@ -240,15 +228,25 @@ public class FilmDaoImpl implements FilmDao {
     }
 
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
-                                 HashMap<String, Integer> mpaId, List<HashMap<String, Integer>> genreList) {
-        return new Film(
+                                 int mpaId, String mpaName) {
+
+        HashMap<String, Integer> mpaIdMap = new HashMap<>();
+        mpaIdMap.put("id", mpaId);
+
+        Film film;
+
+        film = new Film(
                 filmId,
                 name,
                 description,
                 releaseDate,
                 duration,
-                mpaId,
-                genreList);
+                mpaIdMap,
+                null);
+
+        film.getMpa().setName(mpaName);
+
+        return film;
     }
 
     public void batchUpdateTest(int id, List<Genres> listGenres) {
@@ -266,54 +264,30 @@ public class FilmDaoImpl implements FilmDao {
         });
     }
 
-    private List<Genres> getGenresFromIdList(List<Integer> ids) {
+
+    private void setGenresForFilmIdList(List<Film> ids) {
         String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
 
-        return jdbcTemplate.query(
-                String.format("SELECT * FROM GENRES WHERE GENRE_ID IN (%s)", inSql),
-                ids.toArray(),
-                (rs, rowNum) -> new Genres(rs.getInt("GENRE_ID"), rs.getString("NAME")));
-    }
+        List<Integer> filmId = new ArrayList<>();
 
-    private HashMap<String, Integer> createMpaHashMap(int mpaId) {
-        HashMap<String, Integer> mpaIdMap = new HashMap<>();
-        mpaIdMap.put("id", mpaId);
-        return mpaIdMap;
-    }
-
-    private List<Mpa> getNameForMpa(List<Integer> ids) {
-        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
-
-        return jdbcTemplate.query(
-                String.format("SELECT * FROM MPA WHERE MPA_ID IN (%s)", inSql),
-                ids.toArray(),
-                (rs, rowNum) -> new Mpa(rs.getInt("MPA_ID"), rs.getString("MPA_NAME")));
-    }
-
-    private List<HashMap<String, Integer>> createGenreList(int filmId) {
-        List<HashMap<String, Integer>> genreList = new ArrayList<>();
-
-        List<Genres> genreIdList;
-
-        genreIdList = jdbcTemplate.query("select * from FILM_GENRES where FILM_ID = ?",
-                (rs, rowNum) -> new Genres(rs.getInt("GENRE_ID"), ""), filmId);
-
-        for (Genres genres : genreIdList) {
-            HashMap<String, Integer> genreId = new HashMap<>();
-            genreId.put("id", genres.getId());
-            genreList.add(genreId);
+        for (Film film : ids) {
+            filmId.add(film.getId());
         }
-        return genreList;
+
+        jdbcTemplate.query(
+                String.format("SELECT * FROM GENRES g, FILM_GENRES fg WHERE g.genre_id = fg.genre_id AND fg.film_id IN (%s)", inSql),
+                filmId.toArray(),
+                (rs, rowNum) -> this.createGenre(rs, ids));
     }
 
-    private void getNameForGenres(Film film) {
-        List<Genres> listGenres = film.getGenres();
-        List<Integer> listIdGenres = new ArrayList<>();
-        for (Genres genre : listGenres) {
-            listIdGenres.add(genre.getId());
+    private List<Film> createGenre(ResultSet rs, List<Film> ids) throws SQLException {
+        for (Film film : ids) {
+            if (film.getId() == rs.getInt("FILM_ID")) {
+                film.addGenres(new Genres(rs.getInt("GENRE_ID"),
+                        rs.getString("NAME")));
+            }
         }
-        listGenres.clear();
-        listGenres.addAll(getGenresFromIdList(listIdGenres));
+        return ids;
     }
 
     private void checkMaxFilmId(int id) {

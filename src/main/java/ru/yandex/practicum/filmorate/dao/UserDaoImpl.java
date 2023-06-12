@@ -32,7 +32,7 @@ public class UserDaoImpl implements UserDao {
 
         users = jdbcTemplate.query("select * from USERS where USER_ID = ?",
                 (rs, rowNum) ->
-                        new User(
+                        createUserModel(
                                 rs.getInt("USER_ID"),
                                 rs.getString("EMAIL"),
                                 rs.getString("LOGIN"),
@@ -47,7 +47,7 @@ public class UserDaoImpl implements UserDao {
     public List<User> getUsers() {
         return jdbcTemplate.query("select * from USERS",
                 (rs, rowNum) ->
-                        new User(
+                        createUserModel(
                                 rs.getInt("USER_ID"),
                                 rs.getString("EMAIL"),
                                 rs.getString("LOGIN"),
@@ -64,31 +64,17 @@ public class UserDaoImpl implements UserDao {
 
         String sqlQuery = "INSERT INTO USERS(EMAIL, LOGIN, NAME, BIRTHDAY) " +
                 "VALUES(?, ?, ?, ?)";
-        if (user.getName().equals(user.getLogin())) {
-            jdbcTemplate.update(connection -> {
-                PreparedStatement ps = connection
-                        .prepareStatement(sqlQuery, new String[]{"USER_ID"});
-                ps.setString(1, user.getEmail());
-                ps.setString(2, user.getLogin());
-                ps.setString(3, user.getLogin());
-                ps.setDate(4, Date.valueOf(user.getBirthday()));
-                return ps;
-            }, keyHolder);
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection
+                    .prepareStatement(sqlQuery, new String[]{"USER_ID"});
+            ps.setString(1, user.getEmail());
+            ps.setString(2, user.getLogin());
+            ps.setString(3, user.getName());
+            ps.setDate(4, Date.valueOf(user.getBirthday()));
+            return ps;
+        }, keyHolder);
 
-            user.setId(keyHolder.getKey().intValue());
-        } else {
-            jdbcTemplate.update(connection -> {
-                PreparedStatement ps = connection
-                        .prepareStatement(sqlQuery, new String[]{"USER_ID"});
-                ps.setString(1, user.getEmail());
-                ps.setString(2, user.getLogin());
-                ps.setString(3, user.getName());
-                ps.setDate(4, Date.valueOf(user.getBirthday()));
-                return ps;
-            }, keyHolder);
-
-            user.setId(keyHolder.getKey().intValue());
-        }
+        user.setId(keyHolder.getKey().intValue());
         return user;
     }
 
@@ -98,23 +84,13 @@ public class UserDaoImpl implements UserDao {
         validationUser(user);
 
         String sqlQuery = "UPDATE USERS SET USER_ID = ?, EMAIL = ?, LOGIN = ?, NAME = ?, BIRTHDAY = ? WHERE USER_ID = ?";
-        if (user.getName().equals(user.getLogin())) {
-            jdbcTemplate.update(sqlQuery,
-                    user.getId(),
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getLogin(),
-                    user.getBirthday(),
-                    user.getId());
-        } else {
-            jdbcTemplate.update(sqlQuery,
-                    user.getId(),
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getName(),
-                    user.getBirthday(),
-                    user.getId());
-        }
+        jdbcTemplate.update(sqlQuery,
+                user.getId(),
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday(),
+                user.getId());
         return user;
     }
 
@@ -125,10 +101,10 @@ public class UserDaoImpl implements UserDao {
         return jdbcTemplate.query("SELECT * " +
                         "FROM USERS AS u " +
                         "JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id " +
-                        "JOIN FRIENDSHIP AS fr ON fr.friend_id = f.friend_id " +
+                        "JOIN FRIENDSHIP AS fr ON u.user_id = fr.friend_id " +
                         "WHERE f.friends = true AND (f.user_id = ? AND fr.user_id = ?)",
                 (rs, rowNum) ->
-                        new User(
+                        createUserModel(
                                 rs.getInt("USER_ID"),
                                 rs.getString("EMAIL"),
                                 rs.getString("LOGIN"),
@@ -153,7 +129,7 @@ public class UserDaoImpl implements UserDao {
         return jdbcTemplate.query("select * from USERS AS u JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id where f.USER_ID = ?" +
                         " AND f.FRIENDS = true",
                 (rs, rowNum) ->
-                        new User(
+                        createUserModel(
                                 rs.getInt("USER_ID"),
                                 rs.getString("EMAIL"),
                                 rs.getString("LOGIN"),
@@ -171,6 +147,15 @@ public class UserDaoImpl implements UserDao {
                 false,
                 id,
                 friendId);
+    }
+
+    private User createUserModel(int userid, String email, String login, String name, LocalDate birthday) {
+        return new User(
+                userid,
+                email,
+                login,
+                name,
+                birthday);
     }
 
     private void checkMaxId(int id) {

@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -15,7 +16,9 @@ public class Film {
     private String description;
     private LocalDate releaseDate;
     private int duration;
+    @Valid
     private List<Genres> genres = new ArrayList<>();
+    @Valid
     private Mpa mpa;
 
     public Film(int id, String name, String description, LocalDate releaseDate, int duration,
@@ -37,4 +40,9 @@ public class Film {
             }
         }
     }
+
+    public void addGenres(Genres genres) {
+        this.genres.add(genres);
+    }
+
 }
