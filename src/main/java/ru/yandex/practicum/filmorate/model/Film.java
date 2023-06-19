@@ -1,12 +1,14 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
+import javax.validation.Valid;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-@Data
+@Getter
+@Setter
 public class Film {
 
     private int id;
@@ -14,17 +16,33 @@ public class Film {
     private String description;
     private LocalDate releaseDate;
     private int duration;
-    private Set<Integer> userLike = new HashSet<>();
+    @Valid
+    private List<Genres> genres = new ArrayList<>();
+    @Valid
+    private Mpa mpa;
 
-    public Integer getUserLikeCount() {
-        return userLike.size();
+    public Film(int id, String name, String description, LocalDate releaseDate, int duration,
+                HashMap<String, Integer> mpa, List<HashMap<String, Integer>> genres) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.releaseDate = releaseDate;
+        this.duration = duration;
+        this.mpa = new Mpa(mpa.get("id"), "");
+
+        if (genres != null && genres.size() != 0) {
+            if (genres.size() > 1) {
+                for (HashMap<String, Integer> genre : genres) {
+                    this.genres.add(new Genres(genre.get("id"), ""));
+                }
+            } else {
+                this.genres.add(new Genres(genres.get(0).get("id"), ""));
+            }
+        }
     }
 
-    public boolean addLike(int id) {
-        return userLike.add(id);
+    public void addGenres(Genres genres) {
+        this.genres.add(genres);
     }
 
-    public boolean removeLike(int id) {
-        return userLike.remove(id);
-    }
 }
