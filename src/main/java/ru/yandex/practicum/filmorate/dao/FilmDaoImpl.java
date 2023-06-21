@@ -227,6 +227,33 @@ public class FilmDaoImpl implements FilmDao {
                 id, userId);
     }
 
+    @Override
+    public List<Film> searchByTitle(String query) {
+        String str = "%" + query.toLowerCase() + "%";
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT *" +
+                "FROM FILMS AS f " +
+                "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
+                "WHERE lower(f.NAME) LIKE  ?", str);
+
+        Film film = null;
+        List<Film> filmList = new ArrayList<>();
+
+        while (filmRows.next()) {
+            int mpaId = filmRows.getInt("MPA_ID");
+
+            film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
+                    filmRows.getString("DESCRIPTION"),
+                    filmRows.getDate("RELEASEDATE").toLocalDate(),
+                    filmRows.getInt("DURATION"), mpaId, filmRows.getString("MPA_NAME")
+            );
+            filmList.add(film);
+        }
+
+        setGenresForFilmIdList(filmList);
+
+        return filmList;
+    }
+
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
                                  int mpaId, String mpaName) {
 

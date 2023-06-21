@@ -58,4 +58,9 @@ public class FilmController {
     public void deleteLike(@PathVariable int id, @PathVariable int userId) {
         filmService.deleteLike(id, userId);
     }
+
+    @GetMapping("/search")
+    public List<Film> search(@RequestParam(required = false) String query, String by) {
+        return filmService.search(query, by);
+    }
 }
