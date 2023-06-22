@@ -200,7 +200,7 @@ public class FilmDaoImpl implements FilmDao {
         mostPopularFilms = jdbcTemplate.query("SELECT *, COUNT(?) FROM FILMS AS f " +
                         "LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID " +
                         "LEFT OUTER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
-                        "GROUP BY f.FILM_ID " +
+                        "GROUP BY f.FILM_ID, fl.user_id " +
                         "ORDER BY fl.FILM_ID DESC " +
                         "LIMIT(?)",
                 (rs, rowNum) ->
@@ -254,6 +254,21 @@ public class FilmDaoImpl implements FilmDao {
         return filmList;
     }
 
+    @Override
+    public void deleteFilm(int filmId) {
+        SqlRowSet checkFilmExists = jdbcTemplate
+                .queryForRowSet("select film_id from Films where film_id = ?", filmId);
+        if (!checkFilmExists.next()) {
+            throw new NotFoundException("Не найден фильм с id = " + filmId);
+        }
+        try {
+            String sqlQuery = "delete from Films where Film_id = ?";
+            jdbcTemplate.update(sqlQuery, filmId);
+        } catch (RuntimeException r) {
+            throw new ValidationException("Ошибка при удалении фильма.");
+        }
+    }
+
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
                                  int mpaId, String mpaName) {
 
@@ -290,7 +305,6 @@ public class FilmDaoImpl implements FilmDao {
             }
         });
     }
-
 
     private void setGenresForFilmIdList(List<Film> ids) {
         String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));

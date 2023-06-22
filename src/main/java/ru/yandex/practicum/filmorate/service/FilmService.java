@@ -80,4 +80,8 @@ public class FilmService {
     }
 
 
+
+    public void deleteFilm(int filmId) {
+        filmDao.deleteFilm(filmId);
+    }
 }
