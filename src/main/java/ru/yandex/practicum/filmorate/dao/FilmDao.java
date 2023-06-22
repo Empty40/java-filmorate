@@ -18,4 +18,6 @@ public interface FilmDao {
     List<Film> mostPopularFilms(int count);
 
     void deleteLike(int id, int userId);
+
+    void deleteFilm(int filmId);
 }

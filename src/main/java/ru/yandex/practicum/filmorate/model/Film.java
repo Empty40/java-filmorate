@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Getter;
 import lombok.Setter;
-
 import javax.validation.Valid;
 import java.time.LocalDate;
 import java.util.*;
@@ -16,6 +15,7 @@ public class Film {
     private String description;
     private LocalDate releaseDate;
     private int duration;
+    private List<Director> directors = new ArrayList<>();
     @Valid
     private List<Genres> genres = new ArrayList<>();
     @Valid

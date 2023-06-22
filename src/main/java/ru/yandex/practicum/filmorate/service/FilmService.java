@@ -42,4 +42,8 @@ public class FilmService {
     public void deleteLike(int id, int userId) {
         filmDao.deleteLike(id, userId);
     }
+
+    public void deleteFilm(int filmId) {
+        filmDao.deleteFilm(filmId);
+    }
 }
