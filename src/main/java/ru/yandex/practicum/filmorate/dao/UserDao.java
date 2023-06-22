@@ -21,4 +21,6 @@ public interface UserDao {
     List<User> getFriends(int id);
 
     void deleteFriend(int id, int friendId);
+
+    void deleteUser(int userId);
 }
