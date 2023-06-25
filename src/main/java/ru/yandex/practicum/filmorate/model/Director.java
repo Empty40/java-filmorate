@@ -1,16 +1,18 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
-import javax.validation.constraints.NotBlank;
+import lombok.NonNull;
 
 @Data
-public class Mpa {
-    private Integer id;
-    @NotBlank
+public class Director {
+    @NonNull
+    private int id;
+
     private String name;
 
-    public Mpa(int id, String name) {
+    public Director(int id, String name) {
         this.id = id;
         this.name = name;
     }
+
 }
