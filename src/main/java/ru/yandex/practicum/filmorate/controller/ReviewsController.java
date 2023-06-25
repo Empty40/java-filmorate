@@ -35,7 +35,7 @@ public class ReviewsController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteDeview(@PathVariable int id) {
+    public void deleteReview(@PathVariable int id) {
         reviewService.deleteReview(id);
     }
 
@@ -66,7 +66,7 @@ public class ReviewsController {
     }
 
     @DeleteMapping("/{id}/dislike/{userId}")
-    public void deleteDisikeToReview(@PathVariable int id, @PathVariable int userId) {
-        reviewService.deleteDisikeToReview(id, userId);
+    public void deleteDislikeToReview(@PathVariable int id, @PathVariable int userId) {
+        reviewService.deleteDislikeToReview(id, userId);
     }
 }

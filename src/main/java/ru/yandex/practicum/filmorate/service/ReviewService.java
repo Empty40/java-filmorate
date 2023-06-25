@@ -47,9 +47,7 @@ public class ReviewService {
         reviewDao.deleteLikeToReview(id, userId);
     }
 
-    public void deleteDisikeToReview(int id, int userId) {
-        reviewDao.deleteDisikeToReview(id, userId);
+    public void deleteDislikeToReview(int id, int userId) {
+        reviewDao.deleteDislikeToReview(id, userId);
     }
-
-
 }

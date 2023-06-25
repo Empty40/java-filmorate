@@ -95,8 +95,8 @@ public class ReviewDaoImpl implements ru.yandex.practicum.filmorate.dao.ReviewDa
         List<Review> filmsReviewList;
 
         if (filmId.equals("*")) {
-
-            filmsReviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS GROUP BY REVIEW_ID ORDER BY USEFUL DESC LIMIT(?)",
+            filmsReviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS GROUP BY REVIEW_ID" +
+                            " ORDER BY USEFUL DESC LIMIT(?)",
                     (rs, rowNum) ->
                             createReviewModel(rs.getInt("REVIEW_ID"),
                                     rs.getString("CONTENT"),
@@ -168,7 +168,7 @@ public class ReviewDaoImpl implements ru.yandex.practicum.filmorate.dao.ReviewDa
     }
 
     @Override
-    public void deleteDisikeToReview(int id, int userId) {
+    public void deleteDislikeToReview(int id, int userId) {
         checkMaxReviewId(id);
         checkMaxUserId(userId);
         String sqlQueryGenres = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 " +

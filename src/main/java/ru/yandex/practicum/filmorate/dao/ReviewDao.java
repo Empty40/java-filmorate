@@ -22,7 +22,5 @@ public interface ReviewDao {
 
     void deleteLikeToReview(int id, int userId);
 
-    void deleteDisikeToReview(int id, int userId);
-
-
+    void deleteDislikeToReview(int id, int userId);
 }
