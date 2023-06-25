@@ -42,4 +42,8 @@ public class FilmService {
     public void deleteLike(int id, int userId) {
         filmDao.deleteLike(id, userId);
     }
+
+    public List<Film> showFilmRecommendations(int userId) {
+        return filmDao.showFilmRecommendations(userId);
+    }
 }
