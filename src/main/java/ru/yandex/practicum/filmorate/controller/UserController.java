@@ -52,16 +52,16 @@ public class UserController {
 
     @GetMapping("/{id}/friends")
     public List<User> getFriends(@PathVariable int id) {
-          return userService.getFriends(id);
+        return userService.getFriends(id);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public void deleteFriend(@PathVariable int id, @PathVariable int friendId) {
         userService.deleteFriend(id, friendId);
-            }
+    }
 
     @DeleteMapping("/{userId}")
-      public String deleteUser(@PathVariable int userId) {
+    public String deleteUser(@PathVariable int userId) {
         userService.deleteUser(userId);
         return "Пользователь удален";
     }
