@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dao;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -19,11 +20,12 @@ import java.util.Collection;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class EventDaoImpl implements EventDao {
+    @Autowired
     JdbcTemplate jdbcTemplate;
 
     //Добавление события с генерацией ключа
     @Override
-    public Event addEvent(Event event) {
+    public void addEvent(Event event) {
         log.debug("Запрос на добавление {} запущен", event);
         KeyHolder keyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO EVENT_FEED\n" +
@@ -31,7 +33,7 @@ public class EventDaoImpl implements EventDao {
                 "VALUES(?, ?, ?, ?, ?);";
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection
-                    .prepareStatement(sql, new String[]{"eventId"});
+                    .prepareStatement(sql, new String[]{"EVENT_Id"});
             ps.setTimestamp(1, event.getEventTimestamp());
             ps.setInt(2, event.getUserId());
             ps.setString(3, event.getEventType());
@@ -43,7 +45,6 @@ public class EventDaoImpl implements EventDao {
         int id = keyHolder.getKey().intValue();
         event.setEventId(id);
         log.debug("Запрос на добавление события {} выполнен", event);
-        return event;
     }
 
     //Получение списка событий по id пользователя

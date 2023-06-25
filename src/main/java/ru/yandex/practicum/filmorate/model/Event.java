@@ -9,6 +9,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import java.sql.Timestamp;
+import java.time.Instant;
 
 
 @Data
@@ -18,7 +19,7 @@ import java.sql.Timestamp;
 public class Event {
     @PositiveOrZero(message = "event_id меньше нуля")
     @NotNull(message = "Отсутствует event_id")
-    int eventId;
+    int eventId = 0;
     @NotNull(message = "Отсутствует event_timestamp")
     Timestamp eventTimestamp;
     @PositiveOrZero(message = "user_id меньше нуля")
@@ -31,4 +32,13 @@ public class Event {
     @PositiveOrZero(message = "entity_id меньше нуля")
     @NotNull(message = "Отсутствует entity_id")
     int entityId;
+
+    //Конструктор для события с созданием времени
+    public Event(String operation, String entity, int userId, int entityId) {
+        this.eventTimestamp = Timestamp.from(Instant.now());
+        this.operation = operation;
+        this.eventType = entity;
+        this.entityId = entityId;
+        this.userId = userId;
+    }
 }

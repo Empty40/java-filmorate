@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 public interface EventDao {
-    Event addEvent(Event event);
+    void addEvent(Event event);
 
     Collection<Event> getEventUser(int userId);
 }
