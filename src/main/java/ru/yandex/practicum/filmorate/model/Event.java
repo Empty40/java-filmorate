@@ -35,7 +35,7 @@ public class Event {
 
     //Конструктор для события с созданием времени
     public Event(String operation, String entity, int userId, int entityId) {
-        if(userId > 0 && entityId >= 0) {
+        if (userId > 0 && entityId >= 0) {
             this.eventTimestamp = Instant.now().toEpochMilli();
             this.operation = operation;
             this.eventType = entity;

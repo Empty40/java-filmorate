@@ -70,7 +70,7 @@ public class UserController {
 
     //Получение ленты событий
     @GetMapping("/{userId}/feed")
-    public Collection<Event>getUserFeed(@PathVariable int userId){
+    public Collection<Event> getUserFeed(@PathVariable int userId) {
         return userService.getUserFeed(userId);
     }
 }
