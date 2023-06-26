@@ -252,7 +252,7 @@ public class FilmDaoImpl implements FilmDao {
         setGenresForFilmIdList(mostPopularFilms);
 
         return mostPopularFilms;
-}
+    }
 
     @Override
     public void deleteLike(int id, int userId) {
