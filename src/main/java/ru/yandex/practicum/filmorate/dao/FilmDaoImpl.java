@@ -255,11 +255,47 @@ public class FilmDaoImpl implements FilmDao {
             film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"), mpaId, filmRows.getString("MPA_NAME")
+                    filmRows.getInt("DURATION"),
+                    mpaId,
+                    filmRows.getString("MPA_NAME")
             );
             filmList.add(film);
         }
 
+        setGenresForFilmIdList(filmList);
+
+        return filmList;
+    }
+
+    @Override
+    public List<Film> searchByDirector(String query) {
+        String str = "%" + query.toLowerCase() + "%";
+
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT * " +
+                "FROM FILMS AS f " +
+                "JOIN FILM_DIRECTOR AS fd ON fd.FILM_ID = f.FILM_ID " +
+                "JOIN DIRECTORS AS d ON d.director_id = fd.director_id " +
+                "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
+                "WHERE lower(d.director_name) LIKE  ? ", str);
+
+        Film film = null;
+        List<Film> filmList = new ArrayList<>();
+
+        while (filmRows.next()) {
+            int mpaId = filmRows.getInt("MPA_ID");
+
+
+            film = createFilmModel(filmRows.getInt("FILM_ID"),
+                    filmRows.getString("NAME"),
+                    filmRows.getString("DESCRIPTION"),
+                    filmRows.getDate("RELEASEDATE").toLocalDate(),
+                    filmRows.getInt("DURATION"),
+                    mpaId,
+                    filmRows.getString("MPA_NAME")
+
+            );
+            filmList.add(film);
+        }
         setGenresForFilmIdList(filmList);
 
         return filmList;
@@ -278,33 +314,6 @@ public class FilmDaoImpl implements FilmDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении фильма.");
         }
-    }
-
-    @Override
-    public List<Film> searchByDirector(String query) {
-        String str = "%" + query.toLowerCase() + "%";
-        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT * " +
-                "FROM FILMS AS f " +
-                "JOIN FILM_DIRECTOR AS fd ON fd.FILM_ID = f.film_id " +
-                "JOIN DIRECTORS AS d ON d.director_id = fd.director_id " +
-                "WHERE lower(f.NAME) LIKE  ?", str);
-
-        Film film = null;
-        List<Film> filmList = new ArrayList<>();
-
-        while (filmRows.next()) {
-            int mpaId = filmRows.getInt("MPA_ID");
-
-            film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
-                    filmRows.getString("DESCRIPTION"),
-                    filmRows.getDate("RELEASEDATE").toLocalDate(),
-                    filmRows.getInt("DURATION"), mpaId, filmRows.getString("MPA_NAME")
-            );
-            filmList.add(film);
-        }
-        setGenresForFilmIdList(filmList);
-
-        return filmList;
     }
 
     @Override

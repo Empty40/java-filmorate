@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -71,13 +72,11 @@ public class FilmService {
                         all.addAll(filmDao.searchByDirector(query));
                         return all;
                     }
-//
-//                    if ((onlyWordsFromBy[0].equals("title") && onlyWordsFromBy[1].equals("director"))) {
-//                        List<Film> all = new ArrayList<>(filmStorage.searchByDirector(query));
-//                        all.addAll(replaceGenresByNull(filmStorage.searchByTitle(query)));
-//                        return all;
-//                    }
-
+                    if ((onlyWordsFromBy[0].equals("title") && onlyWordsFromBy[1].equals("director"))) {
+                        List<Film> all = new ArrayList<>(filmDao.searchByDirector(query));
+                        all.addAll(filmDao.searchByTitle(query));
+                        return all;
+                    }
                 } else {
                     throw new NotFoundException("Такое сочетание параметров не предусмотренно");
                 }
