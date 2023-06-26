@@ -444,8 +444,7 @@ public class FilmDaoImpl implements FilmDao {
 
     @Override
     public List<Film> showFilmRecommendations(int userId) {
-        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList(    /// id юзеров, которые ставили лайки тем же фильмам, что и интересующий юзер
-                "SELECT FL2.USER_ID " +
+        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList("SELECT FL2.USER_ID " +
                         "FROM FILM_LIKES AS FL1 " +
                         "JOIN FILM_LIKES AS FL2 " +
                         "ON FL1.FILM_ID = FL2.FILM_ID " +
@@ -458,8 +457,7 @@ public class FilmDaoImpl implements FilmDao {
             return new ArrayList<>();
         }
 
-        List<Film> recommendedFilms = jdbcTemplate.query(
-                "SELECT * " +
+        List<Film> recommendedFilms = jdbcTemplate.query("SELECT * " +
                         "FROM FILMS f " +
                         "JOIN MPA m ON f.MPA_ID= m.MPA_ID " +
                         "JOIN FILM_LIKES fl ON fl.FILM_ID = f.FILM_ID " +
