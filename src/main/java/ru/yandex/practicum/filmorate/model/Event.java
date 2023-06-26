@@ -21,7 +21,7 @@ public class Event {
     @NotNull(message = "Отсутствует event_id")
     int eventId = 0;
     @NotNull(message = "Отсутствует event_timestamp")
-    Long eventTimestamp;
+    Long timestamp;
     @PositiveOrZero(message = "user_id меньше нуля")
     @NotNull(message = "Отсутствует user_id")
     int userId;
@@ -36,7 +36,7 @@ public class Event {
     //Конструктор для события с созданием времени
     public Event(String operation, String entity, int userId, int entityId) {
         if (userId > 0 && entityId >= 0) {
-            this.eventTimestamp = Instant.now().toEpochMilli();
+            this.timestamp = Instant.now().toEpochMilli();
             this.operation = operation;
             this.eventType = entity;
             this.entityId = entityId;
