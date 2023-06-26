@@ -205,15 +205,40 @@ public class FilmDaoImpl implements FilmDao {
     }
 
     @Override
-    public List<Film> mostPopularFilms(int count) {
-        List<Film> mostPopularFilms;
+    public List<Film> mostPopularFilms(int count, Integer genreId, Integer year) {
 
-        mostPopularFilms = jdbcTemplate.query("SELECT *, COUNT(?) FROM FILMS AS f " +
-                        "LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID " +
-                        "LEFT OUTER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
-                        "GROUP BY f.FILM_ID, fl.user_id " +
-                        "ORDER BY fl.FILM_ID DESC " +
-                        "LIMIT(?)",
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("SELECT *, COUNT(fl.FILM_ID) AS LIKES_COUNT FROM FILMS AS f ");
+        queryBuilder.append("LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID ");
+        queryBuilder.append("LEFT OUTER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID ");
+
+        if (genreId != null) {
+            queryBuilder.append("LEFT OUTER JOIN FILM_GENRES AS fg ON fg.FILM_ID = f.FILM_ID ");
+            queryBuilder.append("WHERE fg.GENRE_ID = ? ");
+        } else {
+            queryBuilder.append("WHERE 1=1 ");
+        }
+
+        if (year != null) {
+            queryBuilder.append("AND YEAR(f.RELEASEDATE) = ? ");
+        }
+
+        queryBuilder.append("GROUP BY f.FILM_ID ");
+        queryBuilder.append("ORDER BY LIKES_COUNT DESC ");
+        queryBuilder.append("LIMIT ?");
+
+        Object[] queryParams;
+        if (genreId != null && year != null) {
+            queryParams = new Object[]{genreId, year, count};
+        } else if (genreId != null) {
+            queryParams = new Object[]{genreId, count};
+        } else if (year != null) {
+            queryParams = new Object[]{year, count};
+        } else {
+            queryParams = new Object[]{count};
+        }
+
+        List<Film> mostPopularFilms = jdbcTemplate.query(queryBuilder.toString(), queryParams,
                 (rs, rowNum) ->
                         createFilmModel(rs.getInt("FILM_ID"),
                                 rs.getString("NAME"),
@@ -222,13 +247,12 @@ public class FilmDaoImpl implements FilmDao {
                                 rs.getInt("DURATION"),
                                 rs.getInt("MPA_ID"),
                                 rs.getString("MPA_NAME")
-                        ),
-                count, count);
+                        ));
 
         setGenresForFilmIdList(mostPopularFilms);
 
         return mostPopularFilms;
-    }
+}
 
     @Override
     public void deleteLike(int id, int userId) {

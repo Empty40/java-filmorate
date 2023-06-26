@@ -15,7 +15,7 @@ public interface FilmDao {
 
     void addLike(int id, int userId);
 
-    List<Film> mostPopularFilms(int count);
+    List<Film> mostPopularFilms(int count, Integer genreId, Integer year);
 
     void deleteLike(int id, int userId);
 
