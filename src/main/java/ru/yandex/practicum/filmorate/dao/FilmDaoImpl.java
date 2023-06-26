@@ -441,4 +441,43 @@ public class FilmDaoImpl implements FilmDao {
             throw new ValidationException("Указана некорректная длительность фильма");
         }
     }
+
+    @Override
+    public List<Film> showFilmRecommendations(int userId) {
+        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList("SELECT FL2.USER_ID " +
+                        "FROM FILM_LIKES AS FL1 " +
+                        "JOIN FILM_LIKES AS FL2 " +
+                        "ON FL1.FILM_ID = FL2.FILM_ID " +
+                        "WHERE FL1.USER_ID = ? AND  FL1.USER_ID != FL2.USER_ID " +
+                        "GROUP BY FL2.USER_ID " +
+                        "ORDER BY COUNT(FL2.USER_ID) DESC", Integer.class, userId
+        );
+
+        if (idUsersWithCommonInterests.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Film> recommendedFilms = jdbcTemplate.query("SELECT * " +
+                        "FROM FILMS f " +
+                        "JOIN MPA m ON f.MPA_ID= m.MPA_ID " +
+                        "JOIN FILM_LIKES fl ON fl.FILM_ID = f.FILM_ID " +
+                        "WHERE f.FILM_ID NOT IN ( " +
+                        "SELECT FILM_ID " +
+                        "FROM FILM_LIKES " +
+                        "WHERE USER_ID = ?) AND fl.USER_ID = ?",
+                (rs, rowNum) ->
+                        createFilmModel(rs.getInt("FILM_ID"),
+                                rs.getString("NAME"),
+                                rs.getString("DESCRIPTION"),
+                                rs.getDate("RELEASEDATE").toLocalDate(),
+                                rs.getInt("DURATION"),
+                                rs.getInt("MPA_ID"),
+                                rs.getString("MPA_NAME")
+                        ),
+                userId, idUsersWithCommonInterests.get(0));
+
+        setGenresForFilmIdList(recommendedFilms);
+
+        return recommendedFilms;
+    }
 }

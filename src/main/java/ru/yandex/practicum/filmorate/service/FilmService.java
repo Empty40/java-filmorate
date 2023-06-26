@@ -57,4 +57,8 @@ public class FilmService {
     public List<Film> getFilmsByDirector(int directorId, String sortBy) {
         return filmDao.getFilmsByDirector(directorId, sortBy);
     }
+
+    public List<Film> showFilmRecommendations(int userId) {
+        return filmDao.showFilmRecommendations(userId);
+    }
 }

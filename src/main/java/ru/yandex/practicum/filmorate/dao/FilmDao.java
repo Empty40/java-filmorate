@@ -22,4 +22,6 @@ public interface FilmDao {
     void deleteFilm(int filmId);
 
     List<Film> getFilmsByDirector(int directorId, String sortBy);
+
+    List<Film> showFilmRecommendations(int userId);
 }
