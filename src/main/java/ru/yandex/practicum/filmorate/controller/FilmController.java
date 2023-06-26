@@ -70,6 +70,9 @@ public class FilmController {
         return "Фильм удален";
     }
 
-
+    @GetMapping("/director/{directorId}")
+    public List<Film> getFilmsByDirector(@PathVariable int directorId, @RequestParam(defaultValue = "year") String sortBy) {
+        return filmService.getFilmsByDirector(directorId, sortBy);
+    }
 
 }

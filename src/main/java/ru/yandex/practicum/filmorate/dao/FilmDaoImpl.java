@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -8,6 +9,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genres;
 
@@ -18,10 +20,10 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 
+@Slf4j
 @Component
 public class FilmDaoImpl implements FilmDao {
     private final JdbcTemplate jdbcTemplate;
-
     private static final LocalDate CONTROL_DATE = LocalDate.of(1895, 12, 28);
 
     public FilmDaoImpl(JdbcTemplate jdbcTemplate) {
@@ -64,6 +66,7 @@ public class FilmDaoImpl implements FilmDao {
                 "FROM FILMS AS f " +
                 "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
                 "GROUP BY f.FILM_ID");
+
         List<Film> films = new ArrayList<>();
 
         List<Integer> filmIdList = new ArrayList<>();
@@ -136,6 +139,9 @@ public class FilmDaoImpl implements FilmDao {
                 film.getId(),
                 film.getMpa().getId());
 
+        addDirectors(film.getId(), film.getDirectors());
+        film.getDirectors().removeIf(element -> element.getName() == null);
+
         return film;
     }
 
@@ -179,6 +185,11 @@ public class FilmDaoImpl implements FilmDao {
             String values = mpaRows.getString("MPA_NAME");
             film.getMpa().setName(values);
         }
+
+        String oldDirectors = "delete from Film_director where film_id = ?";
+        jdbcTemplate.update(oldDirectors, film.getId());
+        addDirectors(film.getId(), film.getDirectors());
+
         return film;
     }
 
@@ -296,6 +307,95 @@ public class FilmDaoImpl implements FilmDao {
         return filmList;
     }
 
+    @Override
+    public List<Film> getFilmsByDirector(int directorId, String sortBy) {
+        SqlRowSet dirExistsCheck = jdbcTemplate
+                .queryForRowSet("select director_id from Directors where director_id = ?", directorId);
+        if (!dirExistsCheck.next()) {
+            throw new NotFoundException("Режиссер не существует.");
+        }
+
+        if (!sortBy.equals("year") && !sortBy.equals("likes")) {
+            sortBy = "year";
+        }
+        log.info("Параметр сортировки фильмов = {}.", sortBy);
+
+        List<Film> films = new ArrayList<>();
+        List<Integer> filmIdList = new ArrayList<>();
+
+        String requestByDirector = "SELECT f.*, m.MPA_NAME FROM Films AS f\n" +
+                "INNER JOIN film_director AS d ON f.film_id = d.film_id\n" +
+                "INNER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID\n" +
+                "WHERE d.director_id = ?\n" +
+                "ORDER BY f.RELEASEDATE";
+
+        if (sortBy.equals("likes")) {
+            requestByDirector = "SELECT f.*, m.MPA_NAME, count(f.film_id) FROM Films AS f\n" +
+                    "INNER JOIN film_director AS d ON f.film_id = d.film_id\n" +
+                    "INNER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID\n" +
+                    "LEFT OUTER JOIN FILM_LIKES AS fl ON f.FILM_ID = fl.FILM_ID \n" +
+                    "WHERE d.director_id = ?\n" +
+                    "GROUP BY f.FILM_ID \n" +
+                    "ORDER BY count(f.FILM_ID)";
+        }
+
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet(requestByDirector, directorId);
+        while (filmRows.next()) {
+
+            int filmId = filmRows.getInt("FILM_ID");
+
+            Film film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
+                    filmRows.getString("DESCRIPTION"),
+                    filmRows.getDate("RELEASEDATE").toLocalDate(),
+                    filmRows.getInt("DURATION"),
+                    filmRows.getInt("MPA_ID"),
+                    filmRows.getString(("MPA_NAME"))
+            );
+
+            filmIdList.add(filmId);
+            films.add(film);
+        }
+        setGenresForFilmIdList(films);
+
+        return films;
+    }
+
+    private void setDirectors(Film film) {
+        int filmId = film.getId();
+        SqlRowSet filmDirectors = jdbcTemplate
+                .queryForRowSet("SELECT * FROM Film_director WHERE film_id = ?", filmId);
+        while (filmDirectors.next()) {
+            int dirId = filmDirectors.getInt("director_id");
+            SqlRowSet directors = jdbcTemplate
+                    .queryForRowSet("SELECT * FROM Directors WHERE director_id = ?", dirId);
+            directors.next();
+            Director director = new Director(directors.getInt("director_id"), directors.getString("director_name"));
+
+            film.getDirectors().add(director);
+        }
+    }
+
+    private void addDirectors(int filmId, List<Director> directors) {
+        for (Director d : directors) {
+            SqlRowSet checkDirectorExists = jdbcTemplate
+                    .queryForRowSet("select director_id from Directors where director_id = ?", d.getId());
+            if (checkDirectorExists.next()) {
+                String sqlQueryDirectors = "INSERT INTO FILM_DIRECTOR(FILM_ID, DIRECTOR_ID)" +
+                        "VALUES(?, ?)";
+                jdbcTemplate.update(sqlQueryDirectors,
+                        filmId,
+                        d.getId());
+
+                SqlRowSet directorName = jdbcTemplate
+                        .queryForRowSet("select director_name from Directors where Director_id = ?", d.getId());
+                if (directorName.next()) {
+                    String name = directorName.getString("Director_name");
+                    d.setName(name);
+                }
+            }
+        }
+    }
+
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
                                  int mpaId, String mpaName) {
 
@@ -314,7 +414,7 @@ public class FilmDaoImpl implements FilmDao {
                 null);
 
         film.getMpa().setName(mpaName);
-
+        setDirectors(film);
         return film;
     }
 

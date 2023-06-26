@@ -2,10 +2,12 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.service.UserService;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -52,17 +54,23 @@ public class UserController {
 
     @GetMapping("/{id}/friends")
     public List<User> getFriends(@PathVariable int id) {
-          return userService.getFriends(id);
+        return userService.getFriends(id);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public void deleteFriend(@PathVariable int id, @PathVariable int friendId) {
         userService.deleteFriend(id, friendId);
-            }
+    }
 
     @DeleteMapping("/{userId}")
-      public String deleteUser(@PathVariable int userId) {
+    public String deleteUser(@PathVariable int userId) {
         userService.deleteUser(userId);
         return "Пользователь удален";
+    }
+
+    //Получение ленты событий
+    @GetMapping("/{userId}/feed")
+    public Collection<Event> getUserFeed(@PathVariable int userId) {
+        return userService.getUserFeed(userId);
     }
 }
