@@ -20,13 +20,15 @@ public class ReviewService {
     }
 
     public Review addReview(Review review) {
-        eventDao.addEvent(new Event("ADD", "REVIEW", review.getUserId(), review.getReviewId()));
-        return reviewDao.addReview(review);
+        Review review1 = reviewDao.addReview(review);
+        eventDao.addEvent(new Event("ADD", "REVIEW", review1.getUserId(), review1.getReviewId()));
+        return review1;
     }
 
     public Review updateReview(Review review) {
-        eventDao.addEvent(new Event("UPDATE", "REVIEW", review.getUserId(), review.getReviewId()));
-        return reviewDao.updateReview(review);
+        Review review1 = reviewDao.updateReview(review);
+        eventDao.addEvent(new Event("UPDATE", "REVIEW", review1.getUserId(), review1.getReviewId()));
+        return review1;
     }
 
     public void deleteReview(int id) {
