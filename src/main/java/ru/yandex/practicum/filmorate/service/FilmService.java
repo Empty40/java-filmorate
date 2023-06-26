@@ -55,7 +55,7 @@ public class FilmService {
         int count = 5;
 
         if (query == null) {
-            return mostPopularFilms(count);
+            return mostPopularFilms(count, null, null);
         } else {
             if (by != null) {
                 String[] onlyWordsFromBy = by.toLowerCase().replaceAll(" ", "").split(",");
