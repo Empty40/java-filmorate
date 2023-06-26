@@ -40,9 +40,9 @@ public class FilmService {
         filmDao.addLike(id, userId);
     }
 
-    public List<Film> mostPopularFilms(int count, Integer genreId , Integer year) {
-        return filmDao.mostPopularFilms(count,genreId,year);
-}
+    public List<Film> mostPopularFilms(int count, Integer genreId, Integer year) {
+        return filmDao.mostPopularFilms(count, genreId, year);
+    }
 
     public void deleteLike(int id, int userId) {
         eventDao.addEvent(new Event("REMOVE", "LIKE", userId, id));

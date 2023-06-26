@@ -53,7 +53,7 @@ public class FilmController {
     public List<Film> mostPopularFilms(@RequestParam(defaultValue = "10") int count,
                                        @RequestParam(required = false) Integer genreId,
                                        @RequestParam(required = false) Integer year) {
-        return filmService.mostPopularFilms(count, genreId,year);
+        return filmService.mostPopularFilms(count, genreId, year);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
