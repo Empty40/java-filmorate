@@ -1,11 +1,10 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
-import lombok.NonNull;
 
 @Data
 public class Director {
-    @NonNull
+
     private int id;
 
     private String name;
@@ -14,5 +13,4 @@ public class Director {
         this.id = id;
         this.name = name;
     }
-
 }
