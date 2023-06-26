@@ -13,6 +13,8 @@ import ru.yandex.practicum.filmorate.model.Event;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Collection;
 
 @Component
@@ -34,7 +36,7 @@ public class EventDaoImpl implements EventDao {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection
                     .prepareStatement(sql, new String[]{"EVENT_Id"});
-            ps.setTimestamp(1, event.getEventTimestamp());
+            ps.setTimestamp(1, Timestamp.from(Instant.ofEpochMilli(event.getEventTimestamp())));
             ps.setInt(2, event.getUserId());
             ps.setString(3, event.getEventType());
             ps.setString(4, event.getOperation());
@@ -52,7 +54,7 @@ public class EventDaoImpl implements EventDao {
     public Collection<Event> getEventUser(int userId) {
         log.debug("Запрос на получение списка событий по userId = {} получен", userId);
         String sql = "SELECT EVENT_ID, EVENT_TIMESTAMP, USER_ID, EVENT_TYPE, OPERATION, ENTITY_ID\n" +
-                "FROM EVENT_FEED" +
+                "FROM EVENT_FEED " +
                 "WHERE USER_ID = ?;";
         log.debug("Запрос на получение списка событий по userId = {} выполнен", userId);
         return jdbcTemplate.query(sql, (rs, rowNum) -> makeEvent(rs), userId);
@@ -62,7 +64,7 @@ public class EventDaoImpl implements EventDao {
     private Event makeEvent(ResultSet rs) throws SQLException {
         return Event.builder()
                 .eventId(rs.getInt("EVENT_ID"))
-                .eventTimestamp(rs.getTimestamp("EVENT_TIMESTAMP"))
+                .eventTimestamp(rs.getTimestamp("EVENT_TIMESTAMP").toInstant().toEpochMilli())
                 .userId(rs.getInt("USER_ID"))
                 .eventType(rs.getString("EVENT_TYPE"))
                 .operation(rs.getString("OPERATION"))

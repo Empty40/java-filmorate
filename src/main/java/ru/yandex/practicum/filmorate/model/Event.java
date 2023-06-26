@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
-import java.sql.Timestamp;
 import java.time.Instant;
 
 
@@ -21,7 +20,7 @@ public class Event {
     @NotNull(message = "Отсутствует event_id")
     int eventId = 0;
     @NotNull(message = "Отсутствует event_timestamp")
-    Timestamp eventTimestamp;
+    Long eventTimestamp;
     @PositiveOrZero(message = "user_id меньше нуля")
     @NotNull(message = "Отсутствует user_id")
     int userId;
@@ -35,7 +34,7 @@ public class Event {
 
     //Конструктор для события с созданием времени
     public Event(String operation, String entity, int userId, int entityId) {
-        this.eventTimestamp = Timestamp.from(Instant.now());
+        this.eventTimestamp = Instant.now().toEpochMilli();
         this.operation = operation;
         this.eventType = entity;
         this.entityId = entityId;

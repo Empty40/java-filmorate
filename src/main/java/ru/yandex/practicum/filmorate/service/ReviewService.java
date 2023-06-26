@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.EventDao;
 import ru.yandex.practicum.filmorate.dao.ReviewDao;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.List;
@@ -10,20 +12,25 @@ import java.util.List;
 public class ReviewService {
 
     private final ReviewDao reviewDao;
+    private final EventDao eventDao;
 
-    public ReviewService(ReviewDao reviewDao) {
+    public ReviewService(ReviewDao reviewDao, EventDao eventDao) {
         this.reviewDao = reviewDao;
+        this.eventDao = eventDao;
     }
 
     public Review addReview(Review review) {
+        eventDao.addEvent(new Event("ADD", "REVIEW", review.getUserId(), review.getReviewId()));
         return reviewDao.addReview(review);
     }
 
     public Review updateReview(Review review) {
+        eventDao.addEvent(new Event("UPDATE", "REVIEW", review.getUserId(), review.getReviewId()));
         return reviewDao.updateReview(review);
     }
 
     public void deleteReview(int id) {
+        eventDao.addEvent(new Event("REMOVE", "REVIEW", getReview(id).getUserId(), id));
         reviewDao.deleteReview(id);
     }
 

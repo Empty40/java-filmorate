@@ -8,8 +8,7 @@ import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -54,10 +53,16 @@ public class UserService {
     }
 
     public void deleteFriend(int id, int friendId) {
+        eventDao.addEvent(new Event("REMOVE", "FRIEND", id, friendId));
         userDao.deleteFriend(id, friendId);
     }
 
     public void deleteUser(int userId) {
         userDao.deleteUser(userId);
+    }
+
+    //Получение коллекции событий
+    public Collection<Event> getUserFeed(int userId) {
+        return eventDao.getEventUser(userId);
     }
 }
