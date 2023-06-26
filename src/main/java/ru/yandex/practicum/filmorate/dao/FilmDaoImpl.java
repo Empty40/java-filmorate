@@ -237,7 +237,6 @@ public class FilmDaoImpl implements FilmDao {
         } else {
             queryParams = new Object[]{count};
         }
-
         List<Film> mostPopularFilms = jdbcTemplate.query(queryBuilder.toString(), queryParams,
                 (rs, rowNum) ->
                         createFilmModel(rs.getInt("FILM_ID"),
