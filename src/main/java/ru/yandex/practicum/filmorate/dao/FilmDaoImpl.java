@@ -262,6 +262,69 @@ public class FilmDaoImpl implements FilmDao {
     }
 
     @Override
+    public List<Film> searchByTitle(String query) {
+        String str = "%" + query.toLowerCase() + "%";
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT *" +
+                "FROM FILMS AS f " +
+                "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
+                "WHERE lower(f.NAME) LIKE  ?", str);
+
+        Film film = null;
+        List<Film> filmList = new ArrayList<>();
+
+        while (filmRows.next()) {
+            int mpaId = filmRows.getInt("MPA_ID");
+
+            film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
+                    filmRows.getString("DESCRIPTION"),
+                    filmRows.getDate("RELEASEDATE").toLocalDate(),
+                    filmRows.getInt("DURATION"),
+                    mpaId,
+                    filmRows.getString("MPA_NAME")
+            );
+            filmList.add(film);
+        }
+
+        setGenresForFilmIdList(filmList);
+
+        return filmList;
+    }
+
+    @Override
+    public List<Film> searchByDirector(String query) {
+        String str = "%" + query.toLowerCase() + "%";
+
+        SqlRowSet filmRows = jdbcTemplate.queryForRowSet("SELECT * " +
+                "FROM FILMS AS f " +
+                "JOIN FILM_DIRECTOR AS fd ON fd.FILM_ID = f.FILM_ID " +
+                "JOIN DIRECTORS AS d ON d.director_id = fd.director_id " +
+                "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
+                "WHERE lower(d.director_name) LIKE  ? ", str);
+
+        Film film = null;
+        List<Film> filmList = new ArrayList<>();
+
+        while (filmRows.next()) {
+            int mpaId = filmRows.getInt("MPA_ID");
+
+
+            film = createFilmModel(filmRows.getInt("FILM_ID"),
+                    filmRows.getString("NAME"),
+                    filmRows.getString("DESCRIPTION"),
+                    filmRows.getDate("RELEASEDATE").toLocalDate(),
+                    filmRows.getInt("DURATION"),
+                    mpaId,
+                    filmRows.getString("MPA_NAME")
+
+            );
+            filmList.add(film);
+        }
+        setGenresForFilmIdList(filmList);
+
+        return filmList;
+    }
+
+    @Override
     public void deleteFilm(int filmId) {
         SqlRowSet checkFilmExists = jdbcTemplate
                 .queryForRowSet("select film_id from Films where film_id = ?", filmId);
