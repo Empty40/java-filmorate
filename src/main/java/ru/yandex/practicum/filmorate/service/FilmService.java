@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.*;
+import java.util.List;
 
 @Service
 public class FilmService {
@@ -45,5 +45,10 @@ public class FilmService {
 
     public void deleteFilm(int filmId) {
         filmDao.deleteFilm(filmId);
+    }
+
+
+    public List<Film> getFilmsByDirector(int directorId, String sortBy) {
+        return filmDao.getFilmsByDirector(directorId, sortBy);
     }
 }

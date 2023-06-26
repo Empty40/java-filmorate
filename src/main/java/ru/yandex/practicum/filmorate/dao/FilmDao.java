@@ -20,4 +20,6 @@ public interface FilmDao {
     void deleteLike(int id, int userId);
 
     void deleteFilm(int filmId);
+
+    List<Film> getFilmsByDirector(int directorId, String sortBy);
 }
