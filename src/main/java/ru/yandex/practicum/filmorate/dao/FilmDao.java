@@ -22,4 +22,6 @@ public interface FilmDao {
     List<Film> searchByTitle(String query);
 
     void deleteFilm(int filmId);
+
+    List<Film> searchByDirector(String query);
 }

@@ -56,15 +56,15 @@ public class FilmService {
                     List<Film> films = filmDao.searchByTitle(query);
                     return films;
                 }
-//                if (onlyWordsFromBy.length == 1 && onlyWordsFromBy[0].equals("director")) {
-//                    List<Film> films = filmStorage.searchByDirector(query);
-//                    return replaceGenresByNull(films);
-//                } else if (onlyWordsFromBy.length > 1) {
-//                    if ((onlyWordsFromBy[0].equals("director") && onlyWordsFromBy[1].equals("title"))) {
-//                        List<Film> all = new ArrayList<>(filmStorage.searchByTitle(query));
-//                        all.addAll(replaceGenresByNull(filmStorage.searchByDirector(query)));
-//                        return all;
-//                    }
+                if (onlyWordsFromBy.length == 1 && onlyWordsFromBy[0].equals("director")) {
+                    List<Film> films = filmDao.searchByDirector(query);
+                    return films;
+                } else if (onlyWordsFromBy.length > 1) {
+                    if ((onlyWordsFromBy[0].equals("director") && onlyWordsFromBy[1].equals("title"))) {
+                        List<Film> all = new ArrayList<>(filmDao.searchByTitle(query));
+                        all.addAll(filmDao.searchByDirector(query));
+                        return all;
+                    }
 //
 //                    if ((onlyWordsFromBy[0].equals("title") && onlyWordsFromBy[1].equals("director"))) {
 //                        List<Film> all = new ArrayList<>(filmStorage.searchByDirector(query));
@@ -72,14 +72,13 @@ public class FilmService {
 //                        return all;
 //                    }
 
-            } else {
-                throw new NotFoundException("Такое сочетание параметров не предусмотренно");
+                } else {
+                    throw new NotFoundException("Такое сочетание параметров не предусмотренно");
+                }
             }
+            throw new NotFoundException("Такое сочетание параметров не предусмотренно");
         }
-        throw new NotFoundException("Такое сочетание параметров не предусмотренно");
     }
-
-
 
     public void deleteFilm(int filmId) {
         filmDao.deleteFilm(filmId);
