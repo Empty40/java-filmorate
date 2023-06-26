@@ -253,6 +253,29 @@ public class FilmDaoImpl implements FilmDao {
         return mostPopularFilms;
     }
 
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        checkMaxUserId(userId);
+        checkMaxUserId(friendId);
+        return jdbcTemplate.query("SELECT * FROM FILMS AS f " +
+                        "JOIN MPA AS m ON f.MPA_ID = m.MPA_ID " +
+                        "WHERE FILM_ID IN " +
+                        "(SELECT FILM_ID FROM FILM_LIKES " +
+                        "WHERE USER_ID=? OR USER_ID=? " +
+                        "GROUP BY FILM_ID " +
+                        "HAVING COUNT(FILM_ID) > 1 " +
+                        "ORDER BY COUNT(USER_ID) DESC)",
+                (rs, rowNum) ->
+                        createFilmModel(rs.getInt("FILM_ID"),
+                                rs.getString("NAME"),
+                                rs.getString("DESCRIPTION"),
+                                rs.getDate("RELEASEDATE").toLocalDate(),
+                                rs.getInt("DURATION"),
+                                rs.getInt("MPA_ID"),
+                                rs.getString("MPA_NAME")
+                        ),
+                userId, friendId);
+    }
+
     @Override
     public void deleteLike(int id, int userId) {
         checkMaxFilmId(id);

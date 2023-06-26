@@ -55,7 +55,7 @@ public class FilmService {
         int count = 5;
 
         if (query == null) {
-            return mostPopularFilms(count);
+            return mostPopularFilms(count, null, null);
         } else {
             if (by != null) {
                 String[] onlyWordsFromBy = by.toLowerCase().replaceAll(" ", "").split(",");
@@ -96,5 +96,9 @@ public class FilmService {
 
     public List<Film> showFilmRecommendations(int userId) {
         return filmDao.showFilmRecommendations(userId);
+    }
+
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        return filmDao.getCommonFilms(userId, friendId);
     }
 }
