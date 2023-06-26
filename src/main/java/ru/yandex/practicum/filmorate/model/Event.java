@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -34,10 +35,14 @@ public class Event {
 
     //Конструктор для события с созданием времени
     public Event(String operation, String entity, int userId, int entityId) {
-        this.eventTimestamp = Instant.now().toEpochMilli();
-        this.operation = operation;
-        this.eventType = entity;
-        this.entityId = entityId;
-        this.userId = userId;
+        if(userId > 0 && entityId >= 0) {
+            this.eventTimestamp = Instant.now().toEpochMilli();
+            this.operation = operation;
+            this.eventType = entity;
+            this.entityId = entityId;
+            this.userId = userId;
+        } else {
+            throw new NotFoundException("Не может быть меньше 0!");
+        }
     }
 }

@@ -45,7 +45,7 @@ public class FilmService {
     }
 
     public void deleteLike(int id, int userId) {
-        eventDao.addEvent(new Event("ADD", "REMOVE", userId, id));
+        eventDao.addEvent(new Event("REMOVE", "LIKE", userId, id));
         filmDao.deleteLike(id, userId);
     }
 
