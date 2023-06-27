@@ -223,7 +223,7 @@ public class FilmDaoImpl implements FilmDao {
             queryBuilder.append("AND YEAR(f.RELEASEDATE) = ? ");
         }
 
-        queryBuilder.append("GROUP BY f.FILM_ID ");
+        queryBuilder.append("GROUP BY f.FILM_ID, fl.USER_ID ");
         queryBuilder.append("ORDER BY LIKES_COUNT DESC ");
         queryBuilder.append("LIMIT ?");
 
@@ -330,7 +330,6 @@ public class FilmDaoImpl implements FilmDao {
         while (filmRows.next()) {
             int mpaId = filmRows.getInt("MPA_ID");
 
-
             film = createFilmModel(filmRows.getInt("FILM_ID"),
                     filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
@@ -338,8 +337,8 @@ public class FilmDaoImpl implements FilmDao {
                     filmRows.getInt("DURATION"),
                     mpaId,
                     filmRows.getString("MPA_NAME")
-
             );
+
             filmList.add(film);
         }
         setGenresForFilmIdList(filmList);
@@ -451,6 +450,45 @@ public class FilmDaoImpl implements FilmDao {
         }
     }
 
+    @Override
+    public List<Film> showFilmRecommendations(int userId) {
+        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList("SELECT FL2.USER_ID " +
+                "FROM FILM_LIKES AS FL1 " +
+                "JOIN FILM_LIKES AS FL2 " +
+                "ON FL1.FILM_ID = FL2.FILM_ID " +
+                "WHERE FL1.USER_ID = ? AND  FL1.USER_ID != FL2.USER_ID " +
+                "GROUP BY FL2.USER_ID " +
+                "ORDER BY COUNT(FL2.USER_ID) DESC", Integer.class, userId
+        );
+
+        if (idUsersWithCommonInterests.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Film> recommendedFilms = jdbcTemplate.query("SELECT * " +
+                        "FROM FILMS f " +
+                        "JOIN MPA m ON f.MPA_ID= m.MPA_ID " +
+                        "JOIN FILM_LIKES fl ON fl.FILM_ID = f.FILM_ID " +
+                        "WHERE f.FILM_ID NOT IN ( " +
+                        "SELECT FILM_ID " +
+                        "FROM FILM_LIKES " +
+                        "WHERE USER_ID = ?) AND fl.USER_ID = ?",
+                (rs, rowNum) ->
+                        createFilmModel(rs.getInt("FILM_ID"),
+                                rs.getString("NAME"),
+                                rs.getString("DESCRIPTION"),
+                                rs.getDate("RELEASEDATE").toLocalDate(),
+                                rs.getInt("DURATION"),
+                                rs.getInt("MPA_ID"),
+                                rs.getString("MPA_NAME")
+                        ),
+                userId, idUsersWithCommonInterests.get(0));
+
+        setGenresForFilmIdList(recommendedFilms);
+
+        return recommendedFilms;
+    }
+
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
                                  int mpaId, String mpaName) {
 
@@ -474,7 +512,8 @@ public class FilmDaoImpl implements FilmDao {
     }
 
     public void batchUpdateTest(int id, List<Genres> listGenres) {
-        jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES(?, ?)", new BatchPreparedStatementSetter() {
+        jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES(?, ?)",
+                new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
                 preparedStatement.setInt(1, id);
@@ -498,7 +537,8 @@ public class FilmDaoImpl implements FilmDao {
         }
 
         jdbcTemplate.query(
-                String.format("SELECT * FROM GENRES g, FILM_GENRES fg WHERE g.genre_id = fg.genre_id AND fg.film_id IN (%s)", inSql),
+                String.format("SELECT * FROM GENRES g, FILM_GENRES fg WHERE" +
+                        " g.genre_id = fg.genre_id AND fg.film_id IN (%s)", inSql),
                 filmId.toArray(),
                 (rs, rowNum) -> this.createGenre(rs, ids));
     }
@@ -549,44 +589,5 @@ public class FilmDaoImpl implements FilmDao {
         if (filmName.getDuration() < 0) {
             throw new ValidationException("Указана некорректная длительность фильма");
         }
-    }
-
-    @Override
-    public List<Film> showFilmRecommendations(int userId) {
-        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList("SELECT FL2.USER_ID " +
-                        "FROM FILM_LIKES AS FL1 " +
-                        "JOIN FILM_LIKES AS FL2 " +
-                        "ON FL1.FILM_ID = FL2.FILM_ID " +
-                        "WHERE FL1.USER_ID = ? AND  FL1.USER_ID != FL2.USER_ID " +
-                        "GROUP BY FL2.USER_ID " +
-                        "ORDER BY COUNT(FL2.USER_ID) DESC", Integer.class, userId
-        );
-
-        if (idUsersWithCommonInterests.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<Film> recommendedFilms = jdbcTemplate.query("SELECT * " +
-                        "FROM FILMS f " +
-                        "JOIN MPA m ON f.MPA_ID= m.MPA_ID " +
-                        "JOIN FILM_LIKES fl ON fl.FILM_ID = f.FILM_ID " +
-                        "WHERE f.FILM_ID NOT IN ( " +
-                        "SELECT FILM_ID " +
-                        "FROM FILM_LIKES " +
-                        "WHERE USER_ID = ?) AND fl.USER_ID = ?",
-                (rs, rowNum) ->
-                        createFilmModel(rs.getInt("FILM_ID"),
-                                rs.getString("NAME"),
-                                rs.getString("DESCRIPTION"),
-                                rs.getDate("RELEASEDATE").toLocalDate(),
-                                rs.getInt("DURATION"),
-                                rs.getInt("MPA_ID"),
-                                rs.getString("MPA_NAME")
-                        ),
-                userId, idUsersWithCommonInterests.get(0));
-
-        setGenresForFilmIdList(recommendedFilms);
-
-        return recommendedFilms;
     }
 }

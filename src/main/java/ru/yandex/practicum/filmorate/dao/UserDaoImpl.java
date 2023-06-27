@@ -142,7 +142,6 @@ public class UserDaoImpl implements UserDao {
                                 rs.getDate("BIRTHDAY").toLocalDate()
                         ),
                 id);
-
     }
 
     public void deleteFriend(int id, int friendId) {
