@@ -292,7 +292,7 @@ public class FilmDaoImpl implements FilmDao {
                 "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
                 "WHERE lower(f.NAME) LIKE  ?", str);
 
-        Film film = null;
+        Film film;
         List<Film> filmList = new ArrayList<>();
 
         while (filmRows.next()) {
@@ -324,7 +324,7 @@ public class FilmDaoImpl implements FilmDao {
                 "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
                 "WHERE lower(d.director_name) LIKE  ? ", str);
 
-        Film film = null;
+        Film film;
         List<Film> filmList = new ArrayList<>();
 
         while (filmRows.next()) {
