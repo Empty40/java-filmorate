@@ -375,7 +375,6 @@ public class FilmDaoImpl implements FilmDao {
         log.info("Параметр сортировки фильмов = {}.", sortBy);
 
         List<Film> films = new ArrayList<>();
-        List<Integer> filmIdList = new ArrayList<>();
 
         String requestByDirector = "SELECT f.*, m.MPA_NAME FROM Films AS f\n" +
                 "INNER JOIN film_director AS d ON f.film_id = d.film_id\n" +
@@ -396,8 +395,6 @@ public class FilmDaoImpl implements FilmDao {
         SqlRowSet filmRows = jdbcTemplate.queryForRowSet(requestByDirector, directorId);
         while (filmRows.next()) {
 
-            int filmId = filmRows.getInt("FILM_ID");
-
             Film film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
@@ -406,7 +403,6 @@ public class FilmDaoImpl implements FilmDao {
                     filmRows.getString(("MPA_NAME"))
             );
 
-            filmIdList.add(filmId);
             films.add(film);
         }
         setGenresForFilmIdList(films);
