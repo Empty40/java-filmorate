@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.dao;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +19,12 @@ import java.util.Collection;
 
 @Component
 @Slf4j
-@AllArgsConstructor
 @RequiredArgsConstructor
 public class EventDaoImpl implements EventDao {
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
     @Autowired
-    UserDao userDao;
+    private final UserDao userDao;
 
     //Добавление события с генерацией ключа
     @Override
@@ -57,7 +55,7 @@ public class EventDaoImpl implements EventDao {
     public Collection<Event> getEventUser(int userId) {
         log.debug("Запрос на получение списка событий по userId = {} получен", userId);
         User user = userDao.getUser(userId);
-        String sql = "SELECT EVENT_ID, EVENT_TIMESTAMP, USER_ID, EVENT_TYPE, OPERATION, ENTITY_ID\n" +
+        String sql = "SELECT *\n" +
                 "FROM EVENT_FEED " +
                 "WHERE USER_ID = ?;";
         log.debug("Запрос на получение списка событий по userId = {} выполнен", user.getId());
