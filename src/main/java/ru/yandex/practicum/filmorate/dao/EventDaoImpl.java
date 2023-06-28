@@ -64,6 +64,7 @@ public class EventDaoImpl implements EventDao {
 
     //Собираем событие
     private Event makeEvent(ResultSet rs) throws SQLException {
+        log.debug("Началась сборка event по запросу sql");
         return Event.builder()
                 .eventId(rs.getInt("EVENT_ID"))
                 .timestamp(rs.getTimestamp("EVENT_TIMESTAMP").toInstant().toEpochMilli())
