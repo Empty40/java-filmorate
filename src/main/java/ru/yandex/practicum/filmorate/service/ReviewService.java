@@ -26,9 +26,10 @@ public class ReviewService {
     }
 
     public Review updateReview(Review review) {
-        Review review1 = reviewDao.updateReview(review);
-        eventDao.addEvent(new Event("UPDATE", "REVIEW", review1.getUserId(), review1.getReviewId()));
-        return review1;
+        Review reviewUpdate = reviewDao.updateReview(review);
+        eventDao.addEvent(new Event("UPDATE", "REVIEW", reviewUpdate.getUserId(),
+                reviewUpdate.getReviewId()));
+        return reviewUpdate;
     }
 
     public void deleteReview(int id) {
@@ -40,7 +41,7 @@ public class ReviewService {
         return reviewDao.getReview(id);
     }
 
-    public List<Review> getFilmsReviews(String filmId, int count) {
+    public List<Review> getFilmsReviews(Integer filmId, int count) {
         return reviewDao.getFilmsReviews(filmId, count);
     }
 

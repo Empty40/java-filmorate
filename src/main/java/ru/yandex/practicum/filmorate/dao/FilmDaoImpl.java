@@ -510,17 +510,17 @@ public class FilmDaoImpl implements FilmDao {
     public void batchUpdateTest(int id, List<Genres> listGenres) {
         jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES(?, ?)",
                 new BatchPreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
-                preparedStatement.setInt(1, id);
-                preparedStatement.setInt(2, listGenres.get(i).getId());
-            }
+                    @Override
+                    public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
+                        preparedStatement.setInt(1, id);
+                        preparedStatement.setInt(2, listGenres.get(i).getId());
+                    }
 
-            @Override
-            public int getBatchSize() {
-                return listGenres.size();
-            }
-        });
+                    @Override
+                    public int getBatchSize() {
+                        return listGenres.size();
+                    }
+                });
     }
 
     private void setGenresForFilmIdList(List<Film> ids) {

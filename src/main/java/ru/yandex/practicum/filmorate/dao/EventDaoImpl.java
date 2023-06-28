@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.dao;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,12 +18,17 @@ import java.util.Collection;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class EventDaoImpl implements EventDao {
-    @Autowired
+
     private final JdbcTemplate jdbcTemplate;
-    @Autowired
+
     private final UserDao userDao;
+
+    @Autowired
+    public EventDaoImpl(JdbcTemplate jdbcTemplate, UserDao userDao) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.userDao = userDao;
+    }
 
     //Добавление события с генерацией ключа
     @Override

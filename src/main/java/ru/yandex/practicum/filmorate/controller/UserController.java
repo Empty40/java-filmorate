@@ -68,9 +68,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public String deleteUser(@PathVariable int userId) {
+    public void deleteUser(@PathVariable int userId) {
         userService.deleteUser(userId);
-        return "Пользователь удален";
+        log.info("Пользователь удален");
     }
 
     //Получение ленты событий

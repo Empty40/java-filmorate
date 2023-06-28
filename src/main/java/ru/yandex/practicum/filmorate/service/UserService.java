@@ -14,7 +14,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Data
 public class UserService {
     private final UserDao userDao;
     private final EventDao eventDao;

@@ -67,9 +67,9 @@ public class FilmController {
     }
 
     @DeleteMapping("/{filmId}")
-    public String deleteFilm(@PathVariable int filmId) {
+    public void deleteFilm(@PathVariable int filmId) {
         filmService.deleteFilm(filmId);
-        return "Фильм удален";
+        log.info("Фильм удален");
     }
 
     @GetMapping("/director/{directorId}")
