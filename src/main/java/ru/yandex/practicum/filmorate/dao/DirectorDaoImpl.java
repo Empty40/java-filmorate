@@ -109,7 +109,7 @@ public class DirectorDaoImpl implements DirectorDao {
                 "values (?, ?)";
         jdbcTemplate.update(sqlQuery,
                 id, name);
-        log.info("Обновлены данные режиссера с идентификатором {} не найден.", id);
+        log.info("Обновлены данные режиссера с идентификатором {}.", id);
         return director;
     }
 
