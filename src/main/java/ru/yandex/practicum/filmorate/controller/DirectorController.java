@@ -36,6 +36,7 @@ public class DirectorController {
     @DeleteMapping("/{id}")
     public void deleteDirector(@PathVariable("id") int id) {
         directorService.deleteDirector(id);
+        log.info("Режиссер удален");
     }
 
     @PutMapping

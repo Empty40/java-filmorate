@@ -406,7 +406,7 @@ public class FilmDaoImpl implements FilmDao {
             films.add(film);
         }
         setGenresForFilmIdList(films);
-
+        log.info("Сформирован список фильмов режиссера с id = {}.", directorId);
         return films;
     }
 
