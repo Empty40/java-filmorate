@@ -35,8 +35,9 @@ public class ReviewService {
     }
 
     public void deleteReview(int id) {
-        eventDao.addEvent(new Event(Operation.REMOVE, Entity.REVIEW, getReview(id).getUserId(), id));
-        reviewDao.deleteReview(id);
+        Review review = reviewDao.getReview(id);
+        eventDao.addEvent(new Event(Operation.REMOVE, Entity.REVIEW, review.getUserId(), review.getReviewId()));
+        reviewDao.deleteReview(review.getReviewId());
     }
 
     public Review getReview(int id) {
