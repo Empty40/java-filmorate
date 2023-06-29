@@ -87,13 +87,13 @@ CREATE TABLE IF NOT EXISTS REVIEWS
 
 CREATE TABLE IF NOT EXISTS REVIEW_LIKES
 (
-    review_id integer REFERENCES REVIEWS (review_id),
+    review_id integer REFERENCES REVIEWS (review_id) ON delete CASCADE,
     user_id integer REFERENCES USERS (user_id)
 );
 
 CREATE TABLE IF NOT EXISTS REVIEW_DISLIKES
 (
-    review_id integer REFERENCES REVIEWS (review_id),
+    review_id integer REFERENCES REVIEWS (review_id) ON delete CASCADE,
     user_id integer REFERENCES USERS (user_id)
     );
 

@@ -74,7 +74,7 @@ public class ReviewDaoImpl implements ReviewDao {
     public Review getReview(int id) {
         List<Review> reviewList;
 
-        reviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS WHERE REVIEW_ID = ? ",
+        reviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS WHERE REVIEW_ID = ?",
                 ReviewDaoImpl::createReview,
                 id);
 
