@@ -8,6 +8,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.enums.Entity;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,8 +45,8 @@ public class EventDaoImpl implements EventDao {
                     .prepareStatement(sql, new String[]{"EVENT_Id"});
             ps.setTimestamp(1, Timestamp.from(Instant.ofEpochMilli(event.getTimestamp())));
             ps.setInt(2, event.getUserId());
-            ps.setString(3, event.getEventType());
-            ps.setString(4, event.getOperation());
+            ps.setString(3, event.getEventType().toString());
+            ps.setString(4, event.getOperation().toString());
             ps.setInt(5, event.getEntityId());
             return ps;
         }, keyHolder);
@@ -73,8 +75,8 @@ public class EventDaoImpl implements EventDao {
                 .eventId(rs.getInt("EVENT_ID"))
                 .timestamp(rs.getTimestamp("EVENT_TIMESTAMP").toInstant().toEpochMilli())
                 .userId(rs.getInt("USER_ID"))
-                .eventType(rs.getString("EVENT_TYPE"))
-                .operation(rs.getString("OPERATION"))
+                .eventType(Entity.valueOf(rs.getString("EVENT_TYPE")))
+                .operation(Operation.valueOf(rs.getString("OPERATION")))
                 .entityId(rs.getInt("ENTITY_ID"))
                 .build();
     }

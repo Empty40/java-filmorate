@@ -6,6 +6,8 @@ import ru.yandex.practicum.filmorate.dao.FilmDao;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.enums.Entity;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +40,7 @@ public class FilmService {
     }
 
     public void addLike(int id, int userId) {
-        eventDao.addEvent(new Event("ADD", "LIKE", userId, id));
+        eventDao.addEvent(new Event(Operation.ADD, Entity.LIKE, userId, id));
         filmDao.addLike(id, userId);
     }
 
@@ -48,7 +50,7 @@ public class FilmService {
 
     public void deleteLike(int id, int userId) {
         filmDao.deleteLike(id, userId);
-        eventDao.addEvent(new Event("REMOVE", "LIKE", userId, id));
+        eventDao.addEvent(new Event(Operation.REMOVE, Entity.LIKE, userId, id));
     }
 
     public List<Film> search(String query, String by) {

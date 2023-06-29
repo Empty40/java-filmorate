@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import ru.yandex.practicum.filmorate.model.enums.Entity;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 
 import java.time.Instant;
 
@@ -15,15 +17,15 @@ public class Event {
     private int eventId;
     private Long timestamp;
     private int userId;
-    private String eventType;
-    private String operation;
+    private Entity eventType;
+    private Operation operation;
     private int entityId;
 
     //Конструктор для события с созданием времени
-    public Event(String operation, String entity, int userId, int entityId) {
+    public Event(Operation operation, Entity eventType, int userId, int entityId) {
         this.timestamp = Instant.now().toEpochMilli();
         this.operation = operation;
-        this.eventType = entity;
+        this.eventType = eventType;
         this.entityId = entityId;
         this.userId = userId;
     }

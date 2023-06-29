@@ -5,6 +5,8 @@ import ru.yandex.practicum.filmorate.dao.EventDao;
 import ru.yandex.practicum.filmorate.dao.ReviewDao;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.enums.Entity;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 
 import java.util.List;
 
@@ -21,19 +23,19 @@ public class ReviewService {
 
     public Review addReview(Review review) {
         Review review1 = reviewDao.addReview(review);
-        eventDao.addEvent(new Event("ADD", "REVIEW", review1.getUserId(), review1.getReviewId()));
+        eventDao.addEvent(new Event(Operation.ADD, Entity.REVIEW, review1.getUserId(), review1.getReviewId()));
         return review1;
     }
 
     public Review updateReview(Review review) {
         Review reviewUpdate = reviewDao.updateReview(review);
-        eventDao.addEvent(new Event("UPDATE", "REVIEW", reviewUpdate.getUserId(),
+        eventDao.addEvent(new Event(Operation.UPDATE, Entity.REVIEW, reviewUpdate.getUserId(),
                 reviewUpdate.getReviewId()));
         return reviewUpdate;
     }
 
     public void deleteReview(int id) {
-        eventDao.addEvent(new Event("REMOVE", "REVIEW", getReview(id).getUserId(), id));
+        eventDao.addEvent(new Event(Operation.REMOVE, Entity.REVIEW, getReview(id).getUserId(), id));
         reviewDao.deleteReview(id);
     }
 
