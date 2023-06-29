@@ -206,26 +206,30 @@ public class FilmDaoImpl implements FilmDao {
 
     @Override
     public List<Film> mostPopularFilms(int count, Integer genreId, Integer year) {
-
         StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("SELECT *, COUNT(fl.FILM_ID) AS LIKES_COUNT FROM FILMS AS f ");
+        queryBuilder.append("SELECT f.*, COUNT(fl.FILM_ID) AS LIKES_COUNT, m.MPA_NAME ,fd.director_id ");
+        queryBuilder.append("FROM FILMS AS f ");
         queryBuilder.append("LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID ");
         queryBuilder.append("LEFT OUTER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID ");
+        queryBuilder.append("LEFT OUTER JOIN FILM_director AS fd ON fd.film_id = f.film_id ");
 
         if (genreId != null) {
             queryBuilder.append("LEFT OUTER JOIN FILM_GENRES AS fg ON fg.FILM_ID = f.FILM_ID ");
             queryBuilder.append("WHERE fg.GENRE_ID = ? ");
-        } else {
-            queryBuilder.append("WHERE 1=1 ");
         }
 
         if (year != null) {
-            queryBuilder.append("AND YEAR(f.RELEASEDATE) = ? ");
+            if (genreId != null) {
+                queryBuilder.append("AND YEAR(f.RELEASEDATE) = ? ");
+            } else {
+                queryBuilder.append("WHERE YEAR(f.RELEASEDATE) = ? ");
+            }
         }
 
         queryBuilder.append("GROUP BY f.FILM_ID, fl.USER_ID ");
         queryBuilder.append("ORDER BY LIKES_COUNT DESC ");
         queryBuilder.append("LIMIT ?");
+
 
         Object[] queryParams;
         if (genreId != null && year != null) {
@@ -237,18 +241,22 @@ public class FilmDaoImpl implements FilmDao {
         } else {
             queryParams = new Object[]{count};
         }
-        List<Film> mostPopularFilms = jdbcTemplate.query(queryBuilder.toString(), queryParams,
-                (rs, rowNum) ->
-                        createFilmModel(rs.getInt("FILM_ID"),
-                                rs.getString("NAME"),
-                                rs.getString("DESCRIPTION"),
-                                rs.getDate("RELEASEDATE").toLocalDate(),
-                                rs.getInt("DURATION"),
-                                rs.getInt("MPA_ID"),
-                                rs.getString("MPA_NAME")
-                        ));
+
+        List<Film> mostPopularFilms = jdbcTemplate.query(queryBuilder.toString(), queryParams, (rs, rowNum) ->
+                createFilmModel(
+                        rs.getInt("FILM_ID"),
+                        rs.getString("NAME"),
+                        rs.getString("DESCRIPTION"),
+                        rs.getDate("RELEASEDATE").toLocalDate(),
+                        rs.getInt("DURATION"),
+                        rs.getInt("MPA_ID"),
+                        rs.getString("MPA_NAME")
+                ));
 
         setGenresForFilmIdList(mostPopularFilms);
+        for (Film film : mostPopularFilms) {
+            setDirectors(film);
+        }
 
         return mostPopularFilms;
     }
@@ -412,16 +420,14 @@ public class FilmDaoImpl implements FilmDao {
 
     private void setDirectors(Film film) {
         int filmId = film.getId();
-        SqlRowSet filmDirectors = jdbcTemplate
-                .queryForRowSet("SELECT * FROM Film_director WHERE film_id = ?", filmId);
-        while (filmDirectors.next()) {
+        SqlRowSet filmDirectors = jdbcTemplate.queryForRowSet("SELECT * FROM Film_director WHERE film_id = ? LIMIT 1", filmId);
+        if (filmDirectors.next()) {
             int dirId = filmDirectors.getInt("director_id");
-            SqlRowSet directors = jdbcTemplate
-                    .queryForRowSet("SELECT * FROM Directors WHERE director_id = ?", dirId);
-            directors.next();
-            Director director = new Director(directors.getInt("director_id"), directors.getString("director_name"));
-
-            film.getDirectors().add(director);
+            SqlRowSet directors = jdbcTemplate.queryForRowSet("SELECT * FROM Directors WHERE director_id = ?", dirId);
+            if (directors.next()) {
+                Director director = new Director(directors.getInt("director_id"), directors.getString("director_name"));
+                film.setDirectors(Collections.singletonList(director));
+            }
         }
     }
 
