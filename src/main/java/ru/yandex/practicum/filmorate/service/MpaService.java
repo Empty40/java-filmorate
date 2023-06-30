@@ -24,5 +24,4 @@ public class MpaService {
     public List<Mpa> getAllMpa() {
         return mpaDao.getAllMpa();
     }
-
 }

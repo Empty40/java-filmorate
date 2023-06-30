@@ -206,26 +206,30 @@ public class FilmDaoImpl implements FilmDao {
 
     @Override
     public List<Film> mostPopularFilms(int count, Integer genreId, Integer year) {
-
         StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("SELECT *, COUNT(fl.FILM_ID) AS LIKES_COUNT FROM FILMS AS f ");
+        queryBuilder.append("SELECT f.*, COUNT(fl.FILM_ID) AS LIKES_COUNT, m.MPA_NAME ,fd.director_id ");
+        queryBuilder.append("FROM FILMS AS f ");
         queryBuilder.append("LEFT OUTER JOIN FILM_LIKES AS fl ON fl.FILM_ID = f.FILM_ID ");
         queryBuilder.append("LEFT OUTER JOIN MPA AS m ON m.MPA_ID = f.MPA_ID ");
+        queryBuilder.append("LEFT OUTER JOIN FILM_director AS fd ON fd.film_id = f.film_id ");
 
         if (genreId != null) {
             queryBuilder.append("LEFT OUTER JOIN FILM_GENRES AS fg ON fg.FILM_ID = f.FILM_ID ");
             queryBuilder.append("WHERE fg.GENRE_ID = ? ");
-        } else {
-            queryBuilder.append("WHERE 1=1 ");
         }
 
         if (year != null) {
-            queryBuilder.append("AND YEAR(f.RELEASEDATE) = ? ");
+            if (genreId != null) {
+                queryBuilder.append("AND YEAR(f.RELEASEDATE) = ? ");
+            } else {
+                queryBuilder.append("WHERE YEAR(f.RELEASEDATE) = ? ");
+            }
         }
 
-        queryBuilder.append("GROUP BY f.FILM_ID ");
+        queryBuilder.append("GROUP BY f.FILM_ID, fl.USER_ID ");
         queryBuilder.append("ORDER BY LIKES_COUNT DESC ");
         queryBuilder.append("LIMIT ?");
+
 
         Object[] queryParams;
         if (genreId != null && year != null) {
@@ -237,7 +241,37 @@ public class FilmDaoImpl implements FilmDao {
         } else {
             queryParams = new Object[]{count};
         }
-        List<Film> mostPopularFilms = jdbcTemplate.query(queryBuilder.toString(), queryParams,
+
+        List<Film> mostPopularFilms = jdbcTemplate.query(queryBuilder.toString(), queryParams, (rs, rowNum) ->
+                createFilmModel(
+                        rs.getInt("FILM_ID"),
+                        rs.getString("NAME"),
+                        rs.getString("DESCRIPTION"),
+                        rs.getDate("RELEASEDATE").toLocalDate(),
+                        rs.getInt("DURATION"),
+                        rs.getInt("MPA_ID"),
+                        rs.getString("MPA_NAME")
+                ));
+
+        setGenresForFilmIdList(mostPopularFilms);
+        for (Film film : mostPopularFilms) {
+            setDirectors(film);
+        }
+
+        return mostPopularFilms;
+    }
+
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        checkMaxUserId(userId);
+        checkMaxUserId(friendId);
+        return jdbcTemplate.query("SELECT * FROM FILMS AS f " +
+                        "JOIN MPA AS m ON f.MPA_ID = m.MPA_ID " +
+                        "WHERE FILM_ID IN " +
+                        "(SELECT FILM_ID FROM FILM_LIKES " +
+                        "WHERE USER_ID=? OR USER_ID=? " +
+                        "GROUP BY FILM_ID " +
+                        "HAVING COUNT(FILM_ID) > 1 " +
+                        "ORDER BY COUNT(USER_ID) DESC)",
                 (rs, rowNum) ->
                         createFilmModel(rs.getInt("FILM_ID"),
                                 rs.getString("NAME"),
@@ -246,11 +280,8 @@ public class FilmDaoImpl implements FilmDao {
                                 rs.getInt("DURATION"),
                                 rs.getInt("MPA_ID"),
                                 rs.getString("MPA_NAME")
-                        ));
-
-        setGenresForFilmIdList(mostPopularFilms);
-
-        return mostPopularFilms;
+                        ),
+                userId, friendId);
     }
 
     @Override
@@ -269,7 +300,7 @@ public class FilmDaoImpl implements FilmDao {
                 "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
                 "WHERE lower(f.NAME) LIKE  ?", str);
 
-        Film film = null;
+        Film film;
         List<Film> filmList = new ArrayList<>();
 
         while (filmRows.next()) {
@@ -301,12 +332,11 @@ public class FilmDaoImpl implements FilmDao {
                 "JOIN MPA AS m ON m.MPA_ID = f.MPA_ID " +
                 "WHERE lower(d.director_name) LIKE  ? ", str);
 
-        Film film = null;
+        Film film;
         List<Film> filmList = new ArrayList<>();
 
         while (filmRows.next()) {
             int mpaId = filmRows.getInt("MPA_ID");
-
 
             film = createFilmModel(filmRows.getInt("FILM_ID"),
                     filmRows.getString("NAME"),
@@ -315,8 +345,8 @@ public class FilmDaoImpl implements FilmDao {
                     filmRows.getInt("DURATION"),
                     mpaId,
                     filmRows.getString("MPA_NAME")
-
             );
+
             filmList.add(film);
         }
         setGenresForFilmIdList(filmList);
@@ -337,6 +367,7 @@ public class FilmDaoImpl implements FilmDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении фильма.");
         }
+        log.info("Удален фильм id: " + filmId);
     }
 
     @Override
@@ -353,7 +384,6 @@ public class FilmDaoImpl implements FilmDao {
         log.info("Параметр сортировки фильмов = {}.", sortBy);
 
         List<Film> films = new ArrayList<>();
-        List<Integer> filmIdList = new ArrayList<>();
 
         String requestByDirector = "SELECT f.*, m.MPA_NAME FROM Films AS f\n" +
                 "INNER JOIN film_director AS d ON f.film_id = d.film_id\n" +
@@ -374,8 +404,6 @@ public class FilmDaoImpl implements FilmDao {
         SqlRowSet filmRows = jdbcTemplate.queryForRowSet(requestByDirector, directorId);
         while (filmRows.next()) {
 
-            int filmId = filmRows.getInt("FILM_ID");
-
             Film film = createFilmModel(filmRows.getInt("FILM_ID"), filmRows.getString("NAME"),
                     filmRows.getString("DESCRIPTION"),
                     filmRows.getDate("RELEASEDATE").toLocalDate(),
@@ -384,26 +412,23 @@ public class FilmDaoImpl implements FilmDao {
                     filmRows.getString(("MPA_NAME"))
             );
 
-            filmIdList.add(filmId);
             films.add(film);
         }
         setGenresForFilmIdList(films);
-
+        log.info("Сформирован список фильмов режиссера с id = {}.", directorId);
         return films;
     }
 
     private void setDirectors(Film film) {
         int filmId = film.getId();
-        SqlRowSet filmDirectors = jdbcTemplate
-                .queryForRowSet("SELECT * FROM Film_director WHERE film_id = ?", filmId);
-        while (filmDirectors.next()) {
+        SqlRowSet filmDirectors = jdbcTemplate.queryForRowSet("SELECT * FROM Film_director WHERE film_id = ? LIMIT 1", filmId);
+        if (filmDirectors.next()) {
             int dirId = filmDirectors.getInt("director_id");
-            SqlRowSet directors = jdbcTemplate
-                    .queryForRowSet("SELECT * FROM Directors WHERE director_id = ?", dirId);
-            directors.next();
-            Director director = new Director(directors.getInt("director_id"), directors.getString("director_name"));
-
-            film.getDirectors().add(director);
+            SqlRowSet directors = jdbcTemplate.queryForRowSet("SELECT * FROM Directors WHERE director_id = ?", dirId);
+            if (directors.next()) {
+                Director director = new Director(directors.getInt("director_id"), directors.getString("director_name"));
+                film.setDirectors(Collections.singletonList(director));
+            }
         }
     }
 
@@ -426,6 +451,45 @@ public class FilmDaoImpl implements FilmDao {
                 }
             }
         }
+    }
+
+    @Override
+    public List<Film> showFilmRecommendations(int userId) {
+        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList("SELECT FL2.USER_ID " +
+                "FROM FILM_LIKES AS FL1 " +
+                "JOIN FILM_LIKES AS FL2 " +
+                "ON FL1.FILM_ID = FL2.FILM_ID " +
+                "WHERE FL1.USER_ID = ? AND  FL1.USER_ID != FL2.USER_ID " +
+                "GROUP BY FL2.USER_ID " +
+                "ORDER BY COUNT(FL2.USER_ID) DESC", Integer.class, userId
+        );
+
+        if (idUsersWithCommonInterests.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Film> recommendedFilms = jdbcTemplate.query("SELECT * " +
+                        "FROM FILMS f " +
+                        "JOIN MPA m ON f.MPA_ID= m.MPA_ID " +
+                        "JOIN FILM_LIKES fl ON fl.FILM_ID = f.FILM_ID " +
+                        "WHERE f.FILM_ID NOT IN ( " +
+                        "SELECT FILM_ID " +
+                        "FROM FILM_LIKES " +
+                        "WHERE USER_ID = ?) AND fl.USER_ID = ?",
+                (rs, rowNum) ->
+                        createFilmModel(rs.getInt("FILM_ID"),
+                                rs.getString("NAME"),
+                                rs.getString("DESCRIPTION"),
+                                rs.getDate("RELEASEDATE").toLocalDate(),
+                                rs.getInt("DURATION"),
+                                rs.getInt("MPA_ID"),
+                                rs.getString("MPA_NAME")
+                        ),
+                userId, idUsersWithCommonInterests.get(0));
+
+        setGenresForFilmIdList(recommendedFilms);
+
+        return recommendedFilms;
     }
 
     private Film createFilmModel(int filmId, String name, String description, LocalDate releaseDate, int duration,
@@ -451,18 +515,19 @@ public class FilmDaoImpl implements FilmDao {
     }
 
     public void batchUpdateTest(int id, List<Genres> listGenres) {
-        jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES(?, ?)", new BatchPreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
-                preparedStatement.setInt(1, id);
-                preparedStatement.setInt(2, listGenres.get(i).getId());
-            }
+        jdbcTemplate.batchUpdate("INSERT INTO FILM_GENRES (FILM_ID, GENRE_ID) VALUES(?, ?)",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
+                        preparedStatement.setInt(1, id);
+                        preparedStatement.setInt(2, listGenres.get(i).getId());
+                    }
 
-            @Override
-            public int getBatchSize() {
-                return listGenres.size();
-            }
-        });
+                    @Override
+                    public int getBatchSize() {
+                        return listGenres.size();
+                    }
+                });
     }
 
     private void setGenresForFilmIdList(List<Film> ids) {
@@ -475,7 +540,8 @@ public class FilmDaoImpl implements FilmDao {
         }
 
         jdbcTemplate.query(
-                String.format("SELECT * FROM GENRES g, FILM_GENRES fg WHERE g.genre_id = fg.genre_id AND fg.film_id IN (%s)", inSql),
+                String.format("SELECT * FROM GENRES g, FILM_GENRES fg WHERE" +
+                        " g.genre_id = fg.genre_id AND fg.film_id IN (%s)", inSql),
                 filmId.toArray(),
                 (rs, rowNum) -> this.createGenre(rs, ids));
     }
@@ -526,44 +592,5 @@ public class FilmDaoImpl implements FilmDao {
         if (filmName.getDuration() < 0) {
             throw new ValidationException("Указана некорректная длительность фильма");
         }
-    }
-
-    @Override
-    public List<Film> showFilmRecommendations(int userId) {
-        List<Integer> idUsersWithCommonInterests = jdbcTemplate.queryForList("SELECT FL2.USER_ID " +
-                        "FROM FILM_LIKES AS FL1 " +
-                        "JOIN FILM_LIKES AS FL2 " +
-                        "ON FL1.FILM_ID = FL2.FILM_ID " +
-                        "WHERE FL1.USER_ID = ? AND  FL1.USER_ID != FL2.USER_ID " +
-                        "GROUP BY FL2.USER_ID " +
-                        "ORDER BY COUNT(FL2.USER_ID) DESC", Integer.class, userId
-        );
-
-        if (idUsersWithCommonInterests.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<Film> recommendedFilms = jdbcTemplate.query("SELECT * " +
-                        "FROM FILMS f " +
-                        "JOIN MPA m ON f.MPA_ID= m.MPA_ID " +
-                        "JOIN FILM_LIKES fl ON fl.FILM_ID = f.FILM_ID " +
-                        "WHERE f.FILM_ID NOT IN ( " +
-                        "SELECT FILM_ID " +
-                        "FROM FILM_LIKES " +
-                        "WHERE USER_ID = ?) AND fl.USER_ID = ?",
-                (rs, rowNum) ->
-                        createFilmModel(rs.getInt("FILM_ID"),
-                                rs.getString("NAME"),
-                                rs.getString("DESCRIPTION"),
-                                rs.getDate("RELEASEDATE").toLocalDate(),
-                                rs.getInt("DURATION"),
-                                rs.getInt("MPA_ID"),
-                                rs.getString("MPA_NAME")
-                        ),
-                userId, idUsersWithCommonInterests.get(0));
-
-        setGenresForFilmIdList(recommendedFilms);
-
-        return recommendedFilms;
     }
 }

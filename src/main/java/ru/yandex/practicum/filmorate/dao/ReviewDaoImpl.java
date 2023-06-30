@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -9,10 +10,13 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 @Component
-public class ReviewDaoImpl implements ru.yandex.practicum.filmorate.dao.ReviewDao {
+@Slf4j
+public class ReviewDaoImpl implements ReviewDao {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -41,13 +45,12 @@ public class ReviewDaoImpl implements ru.yandex.practicum.filmorate.dao.ReviewDa
         }, keyHolder);
 
         review.setReviewId(keyHolder.getKey().intValue());
-
+        log.debug("id = {} Отзыв добавлен", review.getReviewId());
         return review;
     }
 
     @Override
     public Review updateReview(Review review) {
-        checkMaxReviewId(review.getReviewId());
         validationReviews(review);
         String sqlQuery = "UPDATE REVIEWS SET CONTENT = ?, ISPOSITIVE = ?" +
                 " WHERE REVIEW_ID = ?";
@@ -56,136 +59,108 @@ public class ReviewDaoImpl implements ru.yandex.practicum.filmorate.dao.ReviewDa
                 review.getIsPositive(),
                 review.getReviewId());
 
+        log.debug("Отзыв c id = {} был обновлён", review.getReviewId());
         return getReview(review.getReviewId());
     }
 
     @Override
     public void deleteReview(int id) {
-        checkMaxReviewId(id);
         jdbcTemplate.update("DELETE FROM REVIEWS where REVIEW_ID = ?",
                 id);
+        log.debug("Отзыв c id = {} был удалён", id);
     }
 
     @Override
     public Review getReview(int id) {
-        SqlRowSet reviewRows = jdbcTemplate.queryForRowSet("SELECT *" +
-                "FROM REVIEWS " +
-                "WHERE REVIEW_ID = ?", id);
+        List<Review> reviewList;
 
-        checkMaxReviewId(id);
+        reviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS WHERE REVIEW_ID = ?",
+                ReviewDaoImpl::createReview,
+                id);
 
-        Review review = null;
-
-        if (reviewRows.next()) {
-            review = createReviewModel(reviewRows.getInt("REVIEW_ID"),
-                    reviewRows.getString("CONTENT"), reviewRows.getBoolean("ISPOSITIVE"),
-                    reviewRows.getInt("USER_ID"), reviewRows.getInt("FILM_ID"),
-                    reviewRows.getInt("USEFUL"));
-        }
-
-        if (review == null) {
+        if (reviewList.isEmpty()) {
             throw new NotFoundException("Введен некорректный идентификатор отзыва");
+        } else {
+            log.debug("Был получен отзыв с id = {}", id);
+            return reviewList.get(0);
         }
-
-        return review;
     }
 
     @Override
-    public List<Review> getFilmsReviews(String filmId, int count) {
+    public List<Review> getFilmsReviews(Integer filmId, int count) {
         List<Review> filmsReviewList;
 
-        if (filmId.equals("*")) {
+        if (filmId == 0) {
             filmsReviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS GROUP BY REVIEW_ID" +
                             " ORDER BY USEFUL DESC LIMIT(?)",
-                    (rs, rowNum) ->
-                            createReviewModel(rs.getInt("REVIEW_ID"),
-                                    rs.getString("CONTENT"),
-                                    rs.getBoolean("ISPOSITIVE"),
-                                    rs.getInt("USER_ID"),
-                                    rs.getInt("FILM_ID"),
-                                    rs.getInt("USEFUL")
-                            ),
+                    ReviewDaoImpl::createReview,
                     count);
+            log.debug("Были получены все отзывы");
         } else {
             filmsReviewList = jdbcTemplate.query("SELECT *, FROM REVIEWS WHERE FILM_ID = (?) " +
                             "ORDER BY USEFUL DESC LIMIT(?)",
-                    (rs, rowNum) ->
-                            createReviewModel(rs.getInt("REVIEW_ID"),
-                                    rs.getString("CONTENT"),
-                                    rs.getBoolean("ISPOSITIVE"),
-                                    rs.getInt("USER_ID"),
-                                    rs.getInt("FILM_ID"),
-                                    rs.getInt("USEFUL")
-                            ),
+                    ReviewDaoImpl::createReview,
                     filmId, count);
+            log.debug("Были получены отзывы фильма = {}", filmId);
         }
         return filmsReviewList;
     }
 
-    private Review createReviewModel(int reviewId, String content, boolean ispositive,
-                                     int userId, int filmId, int useful) {
-        Review review;
-
-        review = new Review(
-                reviewId,
-                content,
-                ispositive,
-                userId,
-                filmId,
-                useful);
-
-        return review;
+    private static Review createReview(ResultSet rs, int rowNum) throws SQLException {
+        return new Review(rs.getInt("REVIEW_ID"),
+                rs.getString("CONTENT"),
+                rs.getBoolean("ISPOSITIVE"),
+                rs.getInt("USER_ID"),
+                rs.getInt("FILM_ID"),
+                rs.getInt("USEFUL"));
     }
 
     @Override
     public void addLikeToReview(int id, int userId) {
-        checkMaxReviewId(id);
         checkMaxUserId(userId);
-        String sqlQueryGenres = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 " +
+        String sqlQueryReview = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 " +
                 "WHERE REVIEW_ID = (?)";
-        jdbcTemplate.update(sqlQueryGenres,
+        jdbcTemplate.update(sqlQueryReview,
                 id);
+        String sqlQueryLike = "INSERT INTO REVIEW_LIKES(REVIEW_ID, USER_ID) VALUES(?, ?)";
+        jdbcTemplate.update(sqlQueryLike, id, userId);
+        log.debug("Добавлен лайк отзыву = {}", id);
     }
 
     @Override
     public void addDislikeToReview(int id, int userId) {
-        checkMaxReviewId(id);
         checkMaxUserId(userId);
-        String sqlQueryGenres = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 " +
+        String sqlQueryReview = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 " +
                 "WHERE REVIEW_ID = (?)";
-        jdbcTemplate.update(sqlQueryGenres,
+        jdbcTemplate.update(sqlQueryReview,
                 id);
+        String sqlQueryLike = "INSERT INTO REVIEW_DISLIKES(REVIEW_ID, USER_ID) VALUES(?, ?)";
+        jdbcTemplate.update(sqlQueryLike, id, userId);
+        log.debug("Добавлен дизлайк отзыву = {}", id);
     }
 
     @Override
     public void deleteLikeToReview(int id, int userId) {
-        checkMaxReviewId(id);
         checkMaxUserId(userId);
-        String sqlQueryGenres = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 " +
+        String sqlQueryReview = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 " +
                 "WHERE REVIEW_ID = (?)";
-        jdbcTemplate.update(sqlQueryGenres,
+        jdbcTemplate.update(sqlQueryReview,
                 id);
+        jdbcTemplate.update("DELETE FROM REVIEW_LIKES where REVIEW_ID = ? AND USER_ID = ?",
+                id, userId);
+        log.debug("Удалён лайк отзыву = {}", id);
     }
 
     @Override
     public void deleteDislikeToReview(int id, int userId) {
-        checkMaxReviewId(id);
         checkMaxUserId(userId);
-        String sqlQueryGenres = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 " +
+        String sqlQueryReview = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 " +
                 "WHERE REVIEW_ID = (?)";
-        jdbcTemplate.update(sqlQueryGenres,
+        jdbcTemplate.update(sqlQueryReview,
                 id);
-    }
-
-    private void checkMaxReviewId(int id) {
-        SqlRowSet reviewIdRows = jdbcTemplate.queryForRowSet("SELECT MAX(REVIEW_ID) FROM REVIEWS");
-        int maxId = 0;
-        if (reviewIdRows.next()) {
-            maxId = reviewIdRows.getInt("MAX(REVIEW_ID)");
-        }
-        if (maxId < id || id < 0) {
-            throw new NotFoundException("Введен некорректный идентификатор");
-        }
+        jdbcTemplate.update("DELETE FROM REVIEW_DISLIKES where REVIEW_ID = ? AND USER_ID = ?",
+                id, userId);
+        log.debug("Удалён дизлайк отзыву = {}", id);
     }
 
     private void checkMaxUserId(int id) {

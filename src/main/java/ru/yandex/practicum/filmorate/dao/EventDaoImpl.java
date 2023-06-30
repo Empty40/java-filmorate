@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.dao;
 
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,6 +8,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.enums.Entity;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,13 +20,17 @@ import java.util.Collection;
 
 @Component
 @Slf4j
-@AllArgsConstructor
-@RequiredArgsConstructor
 public class EventDaoImpl implements EventDao {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    private final UserDao userDao;
+
     @Autowired
-    JdbcTemplate jdbcTemplate;
-    @Autowired
-    UserDao userDao;
+    public EventDaoImpl(JdbcTemplate jdbcTemplate, UserDao userDao) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.userDao = userDao;
+    }
 
     //Добавление события с генерацией ключа
     @Override
@@ -41,8 +45,8 @@ public class EventDaoImpl implements EventDao {
                     .prepareStatement(sql, new String[]{"EVENT_Id"});
             ps.setTimestamp(1, Timestamp.from(Instant.ofEpochMilli(event.getTimestamp())));
             ps.setInt(2, event.getUserId());
-            ps.setString(3, event.getEventType());
-            ps.setString(4, event.getOperation());
+            ps.setString(3, event.getEventType().toString());
+            ps.setString(4, event.getOperation().toString());
             ps.setInt(5, event.getEntityId());
             return ps;
         }, keyHolder);
@@ -57,7 +61,7 @@ public class EventDaoImpl implements EventDao {
     public Collection<Event> getEventUser(int userId) {
         log.debug("Запрос на получение списка событий по userId = {} получен", userId);
         User user = userDao.getUser(userId);
-        String sql = "SELECT EVENT_ID, EVENT_TIMESTAMP, USER_ID, EVENT_TYPE, OPERATION, ENTITY_ID\n" +
+        String sql = "SELECT *\n" +
                 "FROM EVENT_FEED " +
                 "WHERE USER_ID = ?;";
         log.debug("Запрос на получение списка событий по userId = {} выполнен", user.getId());
@@ -66,12 +70,13 @@ public class EventDaoImpl implements EventDao {
 
     //Собираем событие
     private Event makeEvent(ResultSet rs) throws SQLException {
+        log.debug("Началась сборка event по запросу sql");
         return Event.builder()
                 .eventId(rs.getInt("EVENT_ID"))
                 .timestamp(rs.getTimestamp("EVENT_TIMESTAMP").toInstant().toEpochMilli())
                 .userId(rs.getInt("USER_ID"))
-                .eventType(rs.getString("EVENT_TYPE"))
-                .operation(rs.getString("OPERATION"))
+                .eventType(Entity.valueOf(rs.getString("EVENT_TYPE")))
+                .operation(Operation.valueOf(rs.getString("OPERATION")))
                 .entityId(rs.getInt("ENTITY_ID"))
                 .build();
     }

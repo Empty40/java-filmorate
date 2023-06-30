@@ -67,9 +67,10 @@ public class FilmController {
     }
 
     @DeleteMapping("/{filmId}")
-    public String deleteFilm(@PathVariable int filmId) {
+    public void deleteFilm(@PathVariable int filmId) {
+        log.info("Запрос на удаление фильма id: {}", filmId);
         filmService.deleteFilm(filmId);
-        return "Фильм удален";
+
     }
 
     @GetMapping("/director/{directorId}")
@@ -77,4 +78,8 @@ public class FilmController {
         return filmService.getFilmsByDirector(directorId, sortBy);
     }
 
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam int userId, @RequestParam int friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
 }

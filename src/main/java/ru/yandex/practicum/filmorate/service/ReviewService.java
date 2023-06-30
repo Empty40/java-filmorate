@@ -5,6 +5,8 @@ import ru.yandex.practicum.filmorate.dao.EventDao;
 import ru.yandex.practicum.filmorate.dao.ReviewDao;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.enums.Entity;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 
 import java.util.List;
 
@@ -21,26 +23,28 @@ public class ReviewService {
 
     public Review addReview(Review review) {
         Review review1 = reviewDao.addReview(review);
-        eventDao.addEvent(new Event("ADD", "REVIEW", review1.getUserId(), review1.getReviewId()));
+        eventDao.addEvent(new Event(Operation.ADD, Entity.REVIEW, review1.getUserId(), review1.getReviewId()));
         return review1;
     }
 
     public Review updateReview(Review review) {
-        Review review1 = reviewDao.updateReview(review);
-        eventDao.addEvent(new Event("UPDATE", "REVIEW", review1.getUserId(), review1.getReviewId()));
-        return review1;
+        Review reviewUpdate = reviewDao.updateReview(review);
+        eventDao.addEvent(new Event(Operation.UPDATE, Entity.REVIEW, reviewUpdate.getUserId(),
+                reviewUpdate.getReviewId()));
+        return reviewUpdate;
     }
 
     public void deleteReview(int id) {
-        eventDao.addEvent(new Event("REMOVE", "REVIEW", getReview(id).getUserId(), id));
-        reviewDao.deleteReview(id);
+        Review review = reviewDao.getReview(id);
+        eventDao.addEvent(new Event(Operation.REMOVE, Entity.REVIEW, review.getUserId(), review.getReviewId()));
+        reviewDao.deleteReview(review.getReviewId());
     }
 
     public Review getReview(int id) {
         return reviewDao.getReview(id);
     }
 
-    public List<Review> getFilmsReviews(String filmId, int count) {
+    public List<Review> getFilmsReviews(Integer filmId, int count) {
         return reviewDao.getFilmsReviews(filmId, count);
     }
 

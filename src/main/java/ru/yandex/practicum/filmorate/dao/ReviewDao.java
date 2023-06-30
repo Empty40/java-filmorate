@@ -14,7 +14,7 @@ public interface ReviewDao {
 
     Review getReview(int id);
 
-    List<Review> getFilmsReviews(String filmId, int count);
+    List<Review> getFilmsReviews(Integer filmId, int count);
 
     void addLikeToReview(int id, int userId);
 

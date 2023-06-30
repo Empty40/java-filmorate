@@ -33,5 +33,4 @@ public class MpaController {
     public List<Mpa> allFilms() {
         return mpaService.getAllMpa();
     }
-
 }

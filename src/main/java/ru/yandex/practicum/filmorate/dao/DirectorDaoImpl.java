@@ -56,7 +56,7 @@ public class DirectorDaoImpl implements DirectorDao {
 
         idUpd.next();
         director.setId(idUpd.getInt("director_id"));
-
+        log.info("Режиссер добавлен.");
         return director;
     }
 
@@ -71,6 +71,7 @@ public class DirectorDaoImpl implements DirectorDao {
                             .getInt("director_id"),
                     directorRows.getString("director_name")));
         }
+        log.info("Сформирован список режиссеров.");
         return directors;
     }
 
@@ -82,6 +83,7 @@ public class DirectorDaoImpl implements DirectorDao {
 
         directorRow.next();
         Director director = new Director(directorId, directorRow.getString("director_name"));
+        log.info("Найден режиссер: " + director.getName());
         return director;
     }
 
@@ -94,6 +96,7 @@ public class DirectorDaoImpl implements DirectorDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении режиссера.");
         }
+        log.info("Удален режиссер id: " + directorId);
     }
 
     @Override
@@ -107,7 +110,7 @@ public class DirectorDaoImpl implements DirectorDao {
                 "values (?, ?)";
         jdbcTemplate.update(sqlQuery,
                 id, name);
-
+        log.info("Обновлены данные режиссера с идентификатором {}.", id);
         return director;
     }
 
@@ -115,7 +118,6 @@ public class DirectorDaoImpl implements DirectorDao {
         SqlRowSet checkDirectorExists = jdbcTemplate
                 .queryForRowSet("select director_id from Directors where director_id = ?", directorId);
         if (!checkDirectorExists.next()) {
-            log.info("Режиссер с идентификатором {} не найден.", directorId);
             throw new NotFoundException("Не найден режиссер с id = " + directorId);
         }
     }

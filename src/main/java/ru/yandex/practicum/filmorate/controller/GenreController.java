@@ -33,5 +33,4 @@ public class GenreController {
     public List<Genres> allFilms() {
         return genreService.getAllGenre();
     }
-
 }
