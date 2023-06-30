@@ -170,7 +170,7 @@ public class UserDaoImpl implements UserDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении пользователя.");
         }
-        log.info("Удален пользователь id: " + userI);
+        log.info("Удален пользователь id: " + userId);
     }
 
     private User createUserModel(int userid, String email, String login, String name, LocalDate birthday) {
