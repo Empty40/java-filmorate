@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -14,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Component
 public class UserDaoImpl implements UserDao {
 
@@ -168,6 +170,7 @@ public class UserDaoImpl implements UserDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении пользователя.");
         }
+        log.info("Удален пользователь id: " + userI);
     }
 
     private User createUserModel(int userid, String email, String login, String name, LocalDate birthday) {

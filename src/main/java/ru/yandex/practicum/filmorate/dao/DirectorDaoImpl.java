@@ -96,6 +96,7 @@ public class DirectorDaoImpl implements DirectorDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении режиссера.");
         }
+        log.info("Удален режиссер id: " + directorId);
     }
 
     @Override

@@ -367,6 +367,7 @@ public class FilmDaoImpl implements FilmDao {
         } catch (RuntimeException r) {
             throw new ValidationException("Ошибка при удалении фильма.");
         }
+        log.info("Удален фильм id: " + filmId);
     }
 
     @Override
