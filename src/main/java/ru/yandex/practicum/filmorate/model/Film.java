@@ -16,6 +16,8 @@ public class Film {
     private String description;
     private LocalDate releaseDate;
     private int duration;
+
+    private List<Director> directors = new ArrayList<>();
     @Valid
     private List<Genres> genres = new ArrayList<>();
     @Valid

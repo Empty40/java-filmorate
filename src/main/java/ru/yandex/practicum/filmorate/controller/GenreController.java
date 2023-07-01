@@ -25,13 +25,14 @@ public class GenreController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Genres> getFilm(@PathVariable int id) {
+    public Optional<Genres> getGenre(@PathVariable int id) {
+        log.info("Получение жанра по идентификатору");
         return genreService.getGenreById(id);
     }
 
     @GetMapping
-    public List<Genres> allFilms() {
+    public List<Genres> allGenres() {
+        log.info("Получение всех жанров");
         return genreService.getAllGenre();
     }
-
 }

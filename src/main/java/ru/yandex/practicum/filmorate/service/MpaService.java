@@ -10,7 +10,6 @@ import java.util.Optional;
 
 @Service
 public class MpaService {
-
     private final MpaDao mpaDao;
 
     @Autowired
@@ -25,5 +24,4 @@ public class MpaService {
     public List<Mpa> getAllMpa() {
         return mpaDao.getAllMpa();
     }
-
 }

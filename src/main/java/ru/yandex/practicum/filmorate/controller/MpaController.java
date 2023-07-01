@@ -25,13 +25,14 @@ public class MpaController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Mpa> getFilm(@PathVariable int id) {
+    public Optional<Mpa> getMpa(@PathVariable int id) {
+        log.info("Получение рейтинга по идентификатору");
         return mpaService.getMpaById(id);
     }
 
     @GetMapping
-    public List<Mpa> allFilms() {
+    public List<Mpa> allMpa() {
+        log.info("Получение всех рейтингов");
         return mpaService.getAllMpa();
     }
-
 }

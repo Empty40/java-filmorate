@@ -35,7 +35,6 @@ public class GenreDaoImpl implements GenreDao {
                     values);
 
 
-
             log.info("Найден mpa: {} {}", genres.getId(),
                     genres.getName());
 

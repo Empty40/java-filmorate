@@ -25,5 +25,4 @@ public class GenreService {
     public List<Genres> getAllGenre() {
         return genreDao.getAllGenre();
     }
-
 }

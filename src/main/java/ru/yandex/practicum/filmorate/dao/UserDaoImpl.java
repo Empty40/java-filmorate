@@ -1,10 +1,11 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -14,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Component
 public class UserDaoImpl implements UserDao {
 
@@ -126,6 +128,11 @@ public class UserDaoImpl implements UserDao {
     }
 
     public List<User> getFriends(int id) {
+        SqlRowSet checkUserExists = jdbcTemplate.queryForRowSet("select * from Users where user_id = ?", id);
+
+        if (!checkUserExists.next()) {
+            throw new NotFoundException("Позльзователь не найден.");
+        }
         return jdbcTemplate.query("select * from USERS AS u JOIN FRIENDSHIP AS f ON u.user_id = f.friend_id where f.USER_ID = ?" +
                         " AND f.FRIENDS = true",
                 (rs, rowNum) ->
@@ -147,6 +154,23 @@ public class UserDaoImpl implements UserDao {
                 false,
                 id,
                 friendId);
+    }
+
+    @Override
+    public void deleteUser(int userId) {
+        SqlRowSet checkUserExists = jdbcTemplate
+                .queryForRowSet("select user_id from Users where user_id = ?", userId);
+        if (!checkUserExists.next()) {
+            throw new NotFoundException("Не найден пользователь с id = " + userId);
+        }
+
+        try {
+            String sqlQuery = "delete from Users where User_id = ?";
+            jdbcTemplate.update(sqlQuery, userId);
+        } catch (RuntimeException r) {
+            throw new ValidationException("Ошибка при удалении пользователя.");
+        }
+        log.info("Удален пользователь id: " + userId);
     }
 
     private User createUserModel(int userid, String email, String login, String name, LocalDate birthday) {
@@ -185,5 +209,4 @@ public class UserDaoImpl implements UserDao {
             user.setName(user.getLogin());
         }
     }
-
 }
